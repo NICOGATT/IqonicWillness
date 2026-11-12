@@ -1,5 +1,6 @@
 "use client";
 
+import { unstable_isUnrecognizedActionError } from "next/navigation";
 import { useRef, useState, type DragEvent } from "react";
 
 import { getImageUploadSignature } from "@/app/admin/actions";
@@ -48,6 +49,11 @@ export function ImageUpload({ onUploaded }: ImageUploadProps) {
       onUploaded(json.secure_url.replace("/image/upload/", "/image/upload/f_auto,q_auto/"));
     } catch (e) {
       console.error("[admin] subida de imagen:", e);
+      if (unstable_isUnrecognizedActionError(e)) {
+        // La pestaña tiene una versión anterior de la app (hubo un deploy nuevo)
+        setError("Se publicó una versión nueva del panel. Recarga la página (Ctrl+Shift+R) y vuelve a intentarlo.");
+        return;
+      }
       setError(e instanceof Error ? e.message : "No se pudo subir la imagen.");
     } finally {
       setUploading(false);
