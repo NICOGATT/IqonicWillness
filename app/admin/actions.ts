@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/lib/auth";
 import { createUploadSignature, type CloudinaryUploadSignature } from "@/lib/cloudinary";
 import { PRODUCTS_CACHE_TAG } from "@/lib/products";
+import { formDataToPackageInput, packageFormSchema } from "@/lib/validation/package";
 import { formDataToProductInput, productFormSchema, toFieldErrors } from "@/lib/validation/product";
 import type { ProductInsert, ProductUpdate } from "@/types/database";
 import { createClient } from "@/utils/supabase/server";
@@ -104,6 +105,62 @@ export async function saveProduct(_prev: ActionState, formData: FormData): Promi
   return { status: "success", message: id ? "Producto actualizado." : "Producto creado." };
 }
 
+// ---------------------------------------------------------------------
+// Paquetes
+// ---------------------------------------------------------------------
+
+/** Crea (sin id) o actualiza (con id) un paquete y su contenido. */
+export async function savePackage(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await requireAdminAction();
+  if (!auth.ok) return auth.state;
+
+  const parsed = packageFormSchema.safeParse(formDataToPackageInput(formData));
+  if (!parsed.success) {
+    return { status: "error", message: "Revisa los campos marcados.", fieldErrors: toFieldErrors(parsed.error) };
+  }
+
+  const { id, items, ...values } = parsed.data;
+  // La función SQL guarda paquete + contenido en una sola transacción
+  const { error } = await auth.supabase.rpc("admin_save_package", {
+    p_package: { id: id ?? null, ...values },
+    p_items: items,
+  });
+
+  if (error) {
+    if (error.code === "23505" && error.message.includes("slug")) {
+      return { status: "error", message: "Ya existe un paquete con ese slug.", fieldErrors: { slug: "Este slug ya está en uso" } };
+    }
+    if (error.code === "23503") {
+      return { status: "error", message: "Alguno de los productos elegidos ya no existe. Recarga la página.", fieldErrors: { items: "Producto inexistente" } };
+    }
+    if (error.code === "PGRST202") {
+      return { status: "error", message: "Falta ejecutar supabase/migrations/0003_packages.sql en Supabase." };
+    }
+    console.error("[admin] savePackage:", error);
+    return { status: "error", message: "No se pudo guardar el paquete. Inténtalo de nuevo." };
+  }
+
+  revalidateCatalog();
+  return { status: "success", message: id ? "Paquete actualizado." : "Paquete creado." };
+}
+
+export async function deletePackage(id: string): Promise<ActionState> {
+  const auth = await requireAdminAction();
+  if (!auth.ok) return auth.state;
+
+  if (!z.uuid().safeParse(id).success) return { status: "error", message: "Paquete inválido." };
+
+  // El contenido (package_items) se borra en cascada
+  const { error, count } = await auth.supabase.from("packages").delete({ count: "exact" }).eq("id", id);
+  if (error || count === 0) {
+    console.error("[admin] deletePackage:", error);
+    return { status: "error", message: "No se pudo eliminar el paquete." };
+  }
+
+  revalidateCatalog();
+  return { status: "success", message: "Paquete eliminado." };
+}
+
 /**
  * Firma para que el panel suba una imagen directo a Cloudinary.
  * Solo admins: sin firma válida Cloudinary rechaza la subida.
@@ -129,6 +186,10 @@ export async function deleteProduct(id: string): Promise<ActionState> {
   if (!z.uuid().safeParse(id).success) return { status: "error", message: "Producto inválido." };
 
   const { error, count } = await auth.supabase.from("products").delete({ count: "exact" }).eq("id", id);
+  if (error?.code === "23503") {
+    // package_items.product_id → on delete restrict
+    return { status: "error", message: "Este producto está dentro de un paquete. Quítalo del paquete antes de eliminarlo." };
+  }
   if (error || count === 0) {
     console.error("[admin] deleteProduct:", error);
     return { status: "error", message: "No se pudo eliminar el producto." };

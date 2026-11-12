@@ -5,10 +5,13 @@ import { Logo } from "@/components/ui/Logo";
 
 const sections = [
   { href: "/admin", label: "Productos", id: "productos" },
+  { href: "/admin/paquetes", label: "Paquetes", id: "paquetes" },
   { href: "/admin/clientes", label: "Clientes", id: "clientes" },
 ] as const;
 
-export function AdminHeader({ email, active = "productos" }: { email: string | null; active?: "productos" | "clientes" }) {
+type SectionId = (typeof sections)[number]["id"];
+
+export function AdminHeader({ email, active = "productos" }: { email: string | null; active?: SectionId }) {
   return (
     <header className="sticky top-0 z-30 border-b border-white/[.07] bg-ink-950/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
