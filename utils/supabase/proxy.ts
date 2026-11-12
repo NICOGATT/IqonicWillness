@@ -4,20 +4,24 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 import { getSupabaseEnv } from "@/utils/supabase/env";
 
-const LOGIN_PATH = "/admin/login";
+/**
+ * Reglas de acceso OPTIMISTAS (solo miran si hay sesión).
+ * La comprobación real se repite en el servidor (lib/auth.ts, lib/customer.ts)
+ * y en la base de datos (RLS).
+ */
+const ADMIN_LOGIN = "/admin/login";
+const CUSTOMER_LOGIN = "/ingresar";
+/** Páginas solo para invitados: con sesión no tiene sentido verlas. */
+const GUEST_ONLY = ["/ingresar", "/registro", "/recuperar"];
 
 /**
  * Refresca la sesión de Supabase (renueva el token y reescribe las cookies)
- * y hace una comprobación OPTIMISTA de acceso a /admin.
- *
- * La verificación real (¿es administrador?) se repite en el servidor
- * (lib/auth.ts) y en la base de datos (RLS). El proxy solo evita mostrar
- * el panel a quien claramente no tiene sesión.
+ * y redirige según la ruta.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const env = getSupabaseEnv();
-  if (!env) return response; // Sin Supabase configurado, la página de login mostrará el aviso.
+  if (!env) return response; // Sin Supabase configurado, las páginas muestran un aviso.
 
   const supabase = createServerClient<Database>(env.url, env.key, {
     cookies: {
@@ -36,22 +40,28 @@ export async function updateSession(request: NextRequest) {
   // getClaims() valida la firma del JWT y refresca la sesión si hace falta.
   const { data } = await supabase.auth.getClaims();
   const isLoggedIn = Boolean(data?.claims?.sub);
-  const { pathname } = request.nextUrl;
-  const isLoginPage = pathname === LOGIN_PATH;
+  const { pathname, search } = request.nextUrl;
 
-  if (!isLoggedIn && !isLoginPage) {
+  const go = (path: string, params?: Record<string, string>) => {
     const url = request.nextUrl.clone();
-    url.pathname = LOGIN_PATH;
-    url.search = "";
+    url.pathname = path;
+    url.search = params ? `?${new URLSearchParams(params)}` : "";
     return redirectWithCookies(url, response);
+  };
+
+  // --- Panel de administración ---
+  if (pathname.startsWith("/admin")) {
+    if (!isLoggedIn && pathname !== ADMIN_LOGIN) return go(ADMIN_LOGIN);
+    if (isLoggedIn && pathname === ADMIN_LOGIN) return go("/admin");
+    return response;
   }
 
-  if (isLoggedIn && isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin";
-    url.search = "";
-    return redirectWithCookies(url, response);
+  // --- Área de clientes ---
+  if (pathname.startsWith("/cuenta") && !isLoggedIn) {
+    // Tras iniciar sesión vuelve a la página que pidió
+    return go(CUSTOMER_LOGIN, { next: pathname + search });
   }
+  if (isLoggedIn && GUEST_ONLY.includes(pathname)) return go("/cuenta");
 
   return response;
 }

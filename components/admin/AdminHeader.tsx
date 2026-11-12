@@ -3,21 +3,37 @@ import Link from "next/link";
 import { signOut } from "@/app/admin/actions";
 import { Logo } from "@/components/ui/Logo";
 
-export function AdminHeader({ email }: { email: string | null }) {
+const sections = [
+  { href: "/admin", label: "Productos", id: "productos" },
+  { href: "/admin/clientes", label: "Clientes", id: "clientes" },
+] as const;
+
+export function AdminHeader({ email, active = "productos" }: { email: string | null; active?: "productos" | "clientes" }) {
   return (
     <header className="sticky top-0 z-30 border-b border-white/[.07] bg-ink-950/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <Logo href="/admin" />
-          <span className="hidden rounded-full border border-brand-violet/30 bg-brand-violet/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-brand-violet-light sm:inline">
-            Admin
-          </span>
+        <div className="flex items-center gap-3 sm:gap-6">
+          <Logo href="/admin" showMark />
+          <nav aria-label="Secciones del panel" className="flex gap-1">
+            {sections.map((s) => (
+              <Link
+                key={s.id}
+                href={s.href}
+                aria-current={active === s.id ? "page" : undefined}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                  active === s.id ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                {s.label}
+              </Link>
+            ))}
+          </nav>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
-          <Link href="/" target="_blank" className="hidden text-sm text-zinc-400 transition hover:text-white sm:inline">
+          <Link href="/" target="_blank" className="hidden text-sm text-zinc-400 transition hover:text-white lg:inline">
             Ver tienda ↗
           </Link>
-          {email && <span className="hidden max-w-[200px] truncate text-sm text-zinc-500 md:inline">{email}</span>}
+          {email && <span className="hidden max-w-[200px] truncate text-sm text-zinc-500 xl:inline">{email}</span>}
           <form action={signOut}>
             <button
               type="submit"

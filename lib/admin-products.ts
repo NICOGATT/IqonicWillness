@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AdminSession } from "@/lib/auth";
+import type { CustomerRow } from "@/types/database";
 import { rowToProduct } from "@/lib/product-mapper";
 import type { Product } from "@/types/product";
 
@@ -20,4 +21,20 @@ export async function getAllProductsForAdmin(supabase: AdminClient): Promise<Pro
 
   if (error) throw new Error(`No se pudieron cargar los productos: ${error.message}`);
   return data.map(rowToProduct);
+}
+
+/**
+ * Clientes registrados (más recientes primero).
+ * RLS solo devuelve todas las filas si el usuario está en `admins`.
+ * Nunca incluye contraseñas: no existen en esta tabla.
+ */
+export async function getCustomersForAdmin(supabase: AdminClient): Promise<CustomerRow[]> {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  if (error) throw new Error(`No se pudieron cargar los clientes: ${error.message}`);
+  return data;
 }

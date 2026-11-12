@@ -45,8 +45,9 @@ Qué crea el script:
 
 1. Dashboard → **Authentication → Users → Add user → Create new user**.
 2. Escribe tu correo y una contraseña segura y marca **Auto Confirm User**.
-3. **Recomendado:** Authentication → **Sign In / Providers** → desactiva **Allow new users to sign up**.
-   Así nadie más puede crearse una cuenta en tu proyecto.
+3. Deja **activado** el registro (Authentication → Sign In / Providers → **Allow new users to sign up**):
+   los clientes lo necesitan para crear su cuenta. Es seguro: crear una cuenta **no** da permisos de
+   administrador; solo los usuarios de la tabla `admins` pueden editar el catálogo.
 
 ## Paso 4 · Darle permisos de administrador
 
@@ -86,6 +87,37 @@ añade las mismas variables en la configuración del proyecto.
 3. Edita un producto (por ejemplo, ponle precio) → **Guardar cambios**.
 4. Abre `http://localhost:3000` → el cambio aparece en la tarjeta.
 
+## Paso 7 · Cuentas de clientes
+
+1. **SQL Editor → New query**: pega [`supabase/migrations/0002_customers.sql`](supabase/migrations/0002_customers.sql) y pulsa **Run**.
+   Crea la tabla `customers` (nombre, apellido, teléfono, fecha de nacimiento, email), sus reglas RLS y un
+   trigger que crea el perfil automáticamente cuando alguien se registra.
+2. **Authentication → URL Configuration**:
+   - **Site URL**: la dirección de tu web (en desarrollo `http://localhost:3000`; en producción tu dominio).
+   - **Redirect URLs**: añade `http://localhost:3000/**` y, cuando publiques, `https://tu-dominio.com/**`.
+   Sin esto, los enlaces de "confirmar cuenta" y "recuperar contraseña" no vuelven a tu web.
+3. En producción, añade también `NEXT_PUBLIC_SITE_URL=https://tu-dominio.com` a las variables de entorno.
+4. (Opcional) **Authentication → Emails**: traduce al español los correos de confirmación y recuperación.
+   Supabase envía pocos correos por hora con su servidor gratuito; para una tienda real configura un SMTP
+   propio (Resend, Brevo, etc.) en **Authentication → Emails → SMTP Settings**.
+
+### ¿Dónde está la contraseña?
+
+No está en `customers`. Supabase Auth la guarda en `auth.users` **cifrada con bcrypt** (hash con sal):
+nadie puede leerla, ni siquiera el administrador. Solo se puede comprobar al iniciar sesión o reemplazar
+con "¿Olvidaste tu contraseña?". Guardarla en una tabla propia, aunque fuera cifrada, sería menos seguro.
+
+### Rutas de clientes
+
+| Ruta | Qué hace |
+|---|---|
+| `/registro` | Crear cuenta (nombre, apellido, teléfono, fecha de nacimiento, email, contraseña). |
+| `/ingresar` | Iniciar sesión. |
+| `/recuperar` | Pedir un enlace para crear una contraseña nueva. |
+| `/cuenta` | Ver y editar sus datos, cambiar contraseña, cerrar sesión. |
+| `/auth/callback` | Recibe los enlaces de los correos y abre la sesión. |
+| `/admin/clientes` | (Admin) Lista de clientes con búsqueda y exportación a CSV. |
+
 ## Archivos del backend
 
 | Archivo | Rol |
@@ -99,7 +131,10 @@ añade las mismas variables en la configuración del proyecto.
 | `lib/admin-products.ts` | Listado completo para el panel (sin caché). |
 | `lib/validation/product.ts` | Validación del formulario con zod. |
 | `app/admin/actions.ts` | Server Actions: `signIn`, `signOut`, `saveProduct`, `deleteProduct`. |
-| `components/admin/*` | Login, tabla, modal de producto con vista previa, confirmación de borrado. |
+| `components/admin/*` | Login, tabla, modal de producto con vista previa, confirmación de borrado, lista de clientes. |
+| `app/auth/actions.ts` | Server Actions de clientes: registro, login, logout, recuperar y cambiar contraseña, editar perfil. |
+| `lib/customer.ts` | `getCustomerSession()`: sesión del cliente + su perfil. |
+| `components/auth/*` | Formularios de registro, login, contraseña y perfil. |
 | `types/database.ts` | Tipos de la BD (regenerables con `npx supabase gen types`). |
 
 ## Sin Supabase configurado

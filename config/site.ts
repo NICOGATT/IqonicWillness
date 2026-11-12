@@ -13,10 +13,10 @@ export const siteConfig = {
   currency: process.env.NEXT_PUBLIC_CURRENCY ?? "USD",
   locale: "es",
   nav: [
-    { href: "#inicio", label: "Inicio", id: "inicio" },
-    { href: "#productos", label: "Productos", id: "productos" },
-    { href: "#beneficios", label: "Beneficios", id: "beneficios" },
-    { href: "#contacto", label: "Contacto", id: "contacto" },
+    { href: "/#inicio", label: "Inicio", id: "inicio" },
+    { href: "/#productos", label: "Productos", id: "productos" },
+    { href: "/#beneficios", label: "Beneficios", id: "beneficios" },
+    { href: "/#contacto", label: "Contacto", id: "contacto" },
   ],
   // Reemplaza por los enlaces reales de tus redes.
   social: {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { AccountLink } from "@/components/layout/AccountLink";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { siteConfig } from "@/config/site";
@@ -72,7 +73,10 @@ export function Navbar() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 lg:gap-4">
+          <div className="hidden md:block">
+            <AccountLink className="text-zinc-300" />
+          </div>
           <div className="hidden sm:block">
             <WhatsAppButton size="sm">Hablar por WhatsApp</WhatsAppButton>
           </div>
@@ -102,6 +106,9 @@ export function Navbar() {
                 </a>
               </li>
             ))}
+            <li>
+              <AccountLink className="w-full rounded-xl px-4 py-3 text-base text-zinc-200 hover:bg-white/5" onNavigate={() => setOpen(false)} />
+            </li>
             <li className="pt-2">
               <WhatsAppButton fullWidth>Hablar por WhatsApp</WhatsAppButton>
             </li>

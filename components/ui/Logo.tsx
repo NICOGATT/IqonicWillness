@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function Logo({ showMark = true, href = "#inicio" }: { showMark?: boolean; href?: string }) {
+export function Logo({ showMark = true, href = "/" }: { showMark?: boolean; href?: string }) {
   return (
     <Link href={href} className="flex items-center gap-2.5" aria-label="IQONIC THRIVE, ir al inicio">
       {showMark && (

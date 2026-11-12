@@ -44,6 +44,19 @@ export type ProductInsert = Omit<ProductRow, "id" | "created_at" | "updated_at">
 
 export type ProductUpdate = Partial<ProductInsert>;
 
+/** Perfil del cliente. La contraseña NO está aquí: vive cifrada en auth.users. */
+export type CustomerRow = {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  /** Fecha ISO "YYYY-MM-DD". */
+  birth_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -51,6 +64,12 @@ export type Database = {
         Row: ProductRow;
         Insert: ProductInsert;
         Update: ProductUpdate;
+        Relationships: [];
+      };
+      customers: {
+        Row: CustomerRow;
+        Insert: Partial<CustomerRow> & { id: string; email: string };
+        Update: Partial<Pick<CustomerRow, "first_name" | "last_name" | "phone" | "birth_date">>;
         Relationships: [];
       };
       admins: {
