@@ -73,9 +73,9 @@ export function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          <WhatsAppButton size="sm" className="hidden sm:inline-flex">
-            Hablar por WhatsApp
-          </WhatsAppButton>
+          <div className="hidden sm:block">
+            <WhatsAppButton size="sm">Hablar por WhatsApp</WhatsAppButton>
+          </div>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}

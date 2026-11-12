@@ -1,29 +1,38 @@
 /**
- * Modelo de dominio de un producto.
- * Es el "contrato" entre la capa de datos (hoy un mock, mañana una API / BD)
- * y la UI. Si el backend cambia, solo hay que adaptar `lib/products.ts`.
+ * Modelo de dominio de un producto (camelCase, independiente de la BD).
+ * `lib/product-mapper.ts` convierte las filas de Supabase a este formato,
+ * así los componentes no conocen los nombres de columnas.
  */
 
 export type ProductCategory = "gummies" | "energy" | "hydration";
 
+export const PRODUCT_CATEGORIES: { value: ProductCategory; label: string }[] = [
+  { value: "gummies", label: "Gomitas" },
+  { value: "energy", label: "Energía" },
+  { value: "hydration", label: "Hidratación" },
+];
+
 /** Iconos disponibles para los beneficios (ver components/product/BenefitIcon.tsx). */
-export type BenefitIconName =
-  | "pill"
-  | "shield"
-  | "sun"
-  | "leaf"
-  | "bolt"
-  | "target"
-  | "trend"
-  | "refresh"
-  | "heart"
-  | "wave"
-  | "balance"
-  | "wind"
-  | "drop"
-  | "pulse"
-  | "gem"
-  | "trophy";
+export const BENEFIT_ICONS = [
+  "pill",
+  "shield",
+  "sun",
+  "leaf",
+  "bolt",
+  "target",
+  "trend",
+  "refresh",
+  "heart",
+  "wave",
+  "balance",
+  "wind",
+  "drop",
+  "pulse",
+  "gem",
+  "trophy",
+] as const;
+
+export type BenefitIconName = (typeof BENEFIT_ICONS)[number];
 
 export interface ProductBenefit {
   icon: BenefitIconName;
@@ -46,28 +55,31 @@ export interface ProductPackaging {
 }
 
 export interface Product {
-  /** Identificador único y slug para futuras rutas (/productos/[id]). */
   id: string;
+  /** Identificador legible para URLs (/productos/[slug]). */
+  slug: string;
   name: string;
+  description: string | null;
   /** Línea / tipo tal como aparece en el empaque. */
   type: string;
   /** Etiqueta corta sobre la imagen. */
-  badge: string;
+  badge: string | null;
   flavor: string;
   category: ProductCategory;
   presentation: {
     label: string;
-    detail: string;
+    detail: string | null;
   };
   benefits: ProductBenefit[];
+  /** Precio en la moneda de siteConfig.currency; null = "consultar". */
+  price: number | null;
   accent: ProductAccent;
-  /** Ruta a una foto real en /public (opcional). Si falta, se dibuja el envase en SVG. */
-  image?: string;
+  /** URL de una foto real. Si falta, se dibuja el envase en SVG. */
+  image: string | null;
   packaging: ProductPackaging;
-  /** Para destacar productos en el hero u ordenar el catálogo. */
-  featured?: boolean;
-  // Campos previstos para la siguiente fase (backend propio):
-  // price?: number; stock?: number; sku?: string; createdAt?: string;
+  featured: boolean;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 export interface CategoryFilter {

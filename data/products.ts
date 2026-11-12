@@ -1,16 +1,19 @@
 import type { CategoryFilter, Product } from "@/types/product";
 
 /**
- * Catálogo mock de IQONIC THRIVE.
+ * Catálogo de respaldo (mock).
  *
- * Fuente única de verdad para la UI en esta primera versión.
- * La UI NO importa este archivo directamente: pasa por `lib/products.ts`,
- * así que reemplazarlo por una base de datos o API no toca los componentes.
+ * Desde la integración con Supabase, la fuente real es la tabla `products`.
+ * Este archivo solo se usa cuando NEXT_PUBLIC_SUPABASE_URL no está configurada
+ * (por ejemplo, al clonar el proyecto por primera vez), para que la tienda
+ * siga funcionando en desarrollo. El mismo contenido está en supabase/seed.sql.
  */
-export const products: Product[] = [
+export const fallbackProducts: Product[] = [
   {
     id: "iq-protect-gummies",
+    slug: "iq-protect-gummies",
     name: "IQ PROTECT GUMMIES",
+    description: "Gomitas diarias con vitaminas esenciales para apoyar tus defensas y tu bienestar.",
     type: "Wellness Support Gummies",
     badge: "Daily Gummies",
     flavor: "Mango",
@@ -22,13 +25,19 @@ export const products: Product[] = [
       { icon: "sun", label: "Bienestar diario" },
       { icon: "leaf", label: "Defensa antioxidante" },
     ],
+    price: null,
     accent: { from: "#FFA51F", to: "#FF7A1A" },
+    image: null,
     packaging: { shape: "jar", title: "IQ PROTECT", subtitle: "DAILY GUMMIES", tag: "60 GUMMIES" },
     featured: true,
+    isActive: true,
+    sortOrder: 10,
   },
   {
     id: "ignite-energy",
+    slug: "ignite-energy",
     name: "IGNITE",
+    description: "Fórmula de hidrógeno en stick packs para energía, enfoque y rendimiento.",
     type: "Energy + Performance",
     badge: "Hydrogen Formula",
     flavor: "Amazon Punch",
@@ -40,13 +49,19 @@ export const products: Product[] = [
       { icon: "trend", label: "Resistencia máxima" },
       { icon: "refresh", label: "Recuperación rápida" },
     ],
+    price: null,
     accent: { from: "#B26BFF", to: "#7C3AED" },
+    image: null,
     packaging: { shape: "pouch", title: "IGNITE", subtitle: "ENERGY + PERFORMANCE", tag: "30 STICK PACKS" },
     featured: true,
+    isActive: true,
+    sortOrder: 20,
   },
   {
     id: "iq-calm-gummies",
+    slug: "iq-calm-gummies",
     name: "IQ CALM GUMMIES",
+    description: "Gomitas anti-estrés para mantener la calma y el equilibrio en tu día.",
     type: "Anti-Stress Gummies",
     badge: "Daily Gummies",
     flavor: "Peach",
@@ -58,12 +73,19 @@ export const products: Product[] = [
       { icon: "balance", label: "Equilibrio diario" },
       { icon: "wind", label: "Alivio de tensión" },
     ],
+    price: null,
     accent: { from: "#FFB38A", to: "#FF8A65" },
+    image: null,
     packaging: { shape: "jar", title: "IQ CALM", subtitle: "ANTI-STRESS", tag: "30 GUMMIES" },
+    featured: false,
+    isActive: true,
+    sortOrder: 30,
   },
   {
     id: "daily-shots-lemon",
+    slug: "daily-shots-lemon",
     name: "DAILY SHOTS",
+    description: "Hidratación diaria con electrolitos esenciales y 25 minerales traza.",
     type: "Daily Performance Fuel",
     badge: "30 Daily Stick Packs",
     flavor: "Lemon Splash",
@@ -75,13 +97,19 @@ export const products: Product[] = [
       { icon: "gem", label: "25 minerales traza" },
       { icon: "trophy", label: "Rendimiento diario" },
     ],
+    price: null,
     accent: { from: "#FFD84D", to: "#F5B70A" },
+    image: null,
     packaging: { shape: "pouch", title: "DAILY", subtitle: "SHOTS", tag: "LEMON SPLASH" },
     featured: true,
+    isActive: true,
+    sortOrder: 40,
   },
   {
     id: "daily-shots-tropical",
+    slug: "daily-shots-tropical",
     name: "DAILY SHOTS",
+    description: "Hidratación diaria con electrolitos esenciales y 25 minerales traza.",
     type: "Daily Performance Fuel",
     badge: "30 Daily Stick Packs",
     flavor: "Tropical Punch",
@@ -93,12 +121,17 @@ export const products: Product[] = [
       { icon: "gem", label: "25 minerales traza" },
       { icon: "trophy", label: "Rendimiento diario" },
     ],
+    price: null,
     accent: { from: "#FF7A2E", to: "#E8401C" },
+    image: null,
     packaging: { shape: "pouch", title: "DAILY", subtitle: "SHOTS", tag: "TROPICAL PUNCH" },
+    featured: false,
+    isActive: true,
+    sortOrder: 50,
   },
 ];
 
-/** Filtros del catálogo. */
+/** Filtros del catálogo público. */
 export const categoryFilters: CategoryFilter[] = [
   { value: "all", label: "Todos" },
   { value: "gummies", label: "Gomitas" },

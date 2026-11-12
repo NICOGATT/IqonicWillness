@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { BenefitIcon } from "@/components/product/BenefitIcon";
 import { ProductArt } from "@/components/product/ProductArt";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
+import { formatPrice } from "@/lib/format";
 import { getProductMessage } from "@/lib/whatsapp";
 import type { Product } from "@/types/product";
 
@@ -30,9 +31,11 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
       {/* Visual */}
       <div className="art-stage relative flex h-64 items-center justify-center overflow-hidden sm:h-72">
         <div className="card-glow absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 opacity-60 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
-        <span className="border-accent-soft text-accent absolute left-4 top-4 rounded-full border bg-black/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur">
-          {product.badge}
-        </span>
+        {product.badge && (
+          <span className="border-accent-soft text-accent absolute left-4 top-4 rounded-full border bg-black/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider backdrop-blur">
+            {product.badge}
+          </span>
+        )}
         <div className="art relative h-56 w-48 sm:h-64 sm:w-56">
           <ProductArt product={product} uid={product.id} />
         </div>
@@ -42,6 +45,9 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
       <div className="flex flex-1 flex-col p-6 pt-2 sm:p-7 sm:pt-3">
         <p className="text-accent text-xs font-semibold uppercase tracking-[0.18em]">{product.type}</p>
         <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-white">{product.name}</h3>
+        {product.description && (
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-400">{product.description}</p>
+        )}
 
         <span className="border-accent-soft bg-accent-soft mt-4 inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium text-white">
           <span className="dot-accent h-2 w-2 rounded-full" />
@@ -68,8 +74,11 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
           </svg>
           <div className="text-sm leading-tight">
             <p className="font-semibold text-white">{product.presentation.label}</p>
-            <p className="text-xs text-zinc-500">{product.presentation.detail}</p>
+            {product.presentation.detail && <p className="text-xs text-zinc-500">{product.presentation.detail}</p>}
           </div>
+          {product.price !== null && (
+            <p className="ml-auto font-display text-lg font-bold text-white">{formatPrice(product.price)}</p>
+          )}
         </div>
 
         <WhatsAppButton

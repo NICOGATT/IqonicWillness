@@ -9,6 +9,9 @@ export const siteConfig = {
     "Suplementos de bienestar y rendimiento: gomitas, energía e hidratación diaria. Pide directo por WhatsApp.",
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "TU_NUMERO",
   generalMessage: "Hola, quiero información sobre los productos IQONIC THRIVE.",
+  /** Moneda y formato de los precios (código ISO 4217, p. ej. USD, MXN, COP, ARS, EUR). */
+  currency: process.env.NEXT_PUBLIC_CURRENCY ?? "USD",
+  locale: "es",
   nav: [
     { href: "#inicio", label: "Inicio", id: "inicio" },
     { href: "#productos", label: "Productos", id: "productos" },

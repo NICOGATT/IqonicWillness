@@ -26,6 +26,9 @@ export function ProductArt({ product, uid, priority = false }: ProductArtProps) 
         sizes="(min-width: 1024px) 260px, 220px"
         className="object-contain"
         priority={priority}
+        // Las URLs las escribe el admin y pueden venir de cualquier dominio:
+        // se muestran tal cual para no tener que listar cada host en next.config.ts.
+        unoptimized={/^https?:\/\//.test(product.image)}
       />
     );
   }

@@ -12,13 +12,13 @@ const slots = [
   { className: "right-[0%] bottom-[12%] z-10 h-[52%] w-[38%]", rotate: "8deg", delay: "1.2s" },
 ];
 
-const stats = [
-  { label: "Fórmulas", value: "5" },
-  { label: "Minerales traza", value: "25" },
-  { label: "Pedido", value: "1 clic" },
-];
+export function Hero({ featured, totalProducts }: { featured: Product[]; totalProducts: number }) {
+  const stats = [
+    { label: "Fórmulas", value: String(totalProducts) },
+    { label: "Minerales traza", value: "25" },
+    { label: "Pedido", value: "1 clic" },
+  ];
 
-export function Hero({ featured }: { featured: Product[] }) {
   // El producto más llamativo (pouch) al centro
   const center = featured.find((p) => p.packaging.shape === "pouch") ?? featured[0];
   const sides = featured.filter((p) => p !== center).slice(0, 2);

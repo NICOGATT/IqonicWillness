@@ -26,7 +26,7 @@ export default async function HomePage() {
     <>
       <Navbar />
       <main>
-        <Hero featured={featured} />
+        <Hero featured={featured} totalProducts={products.length} />
         <Marquee />
 
         <section id="productos" className="relative scroll-mt-20 py-20 md:py-28">
@@ -36,7 +36,7 @@ export default async function HomePage() {
               title="Elige tu fórmula"
               description={
                 <>
-                  Cinco productos, un mismo objetivo: que rindas y te sientas bien cada día. Toca{" "}
+                  Fórmulas con un mismo objetivo: que rindas y te sientas bien cada día. Toca{" "}
                   <span className="text-zinc-200">“Pedir por WhatsApp”</span> y te respondemos con disponibilidad y
                   precio.
                 </>
