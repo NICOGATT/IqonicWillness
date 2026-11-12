@@ -27,7 +27,7 @@ function SocialLink({ href, label, children, className = "" }: { href: string; l
   );
 }
 
-export function Footer() {
+export function Footer({ hiddenNav = [] }: { hiddenNav?: string[] }) {
   return (
     <footer className="border-t border-white/[.06] bg-ink-950">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
@@ -42,7 +42,7 @@ export function Footer() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Enlaces</p>
             <ul className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              {[...siteConfig.nav, ...legalLinks].map((link) => (
+              {[...siteConfig.nav.filter((item) => !hiddenNav.includes(item.id)), ...legalLinks].map((link) => (
                 <li key={link.label}>
                   <a href={link.href} className="text-zinc-500 transition-colors hover:text-white">{link.label}</a>
                 </li>

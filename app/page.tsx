@@ -1,5 +1,6 @@
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
+import { PackageCard } from "@/components/product/PackageCard";
 import { ProductCatalog } from "@/components/product/ProductCatalog";
 import { Benefits } from "@/components/sections/Benefits";
 import { ContactCTA } from "@/components/sections/ContactCTA";
@@ -8,6 +9,7 @@ import { Marquee } from "@/components/sections/Marquee";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { FloatingWhatsApp } from "@/components/whatsapp/FloatingWhatsApp";
+import { getPackages } from "@/lib/packages";
 import { getCategoryFilters, getFeaturedProducts, getProducts } from "@/lib/products";
 
 /**
@@ -16,15 +18,17 @@ import { getCategoryFilters, getFeaturedProducts, getProducts } from "@/lib/prod
  * Cambiar el origen de datos solo afecta a lib/products.ts.
  */
 export default async function HomePage() {
-  const [products, featured, filters] = await Promise.all([
+  const [products, featured, filters, packages] = await Promise.all([
     getProducts(),
     getFeaturedProducts(),
     getCategoryFilters(),
+    getPackages(),
   ]);
+  const productsById = new Map(products.map((p) => [p.id, p]));
 
   return (
     <>
-      <Navbar />
+      <Navbar hiddenNav={packages.length > 0 ? [] : ["paquetes"]} />
       <main>
         <Hero featured={featured} totalProducts={products.length} />
         <Marquee />
@@ -48,10 +52,36 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Solo aparece si hay paquetes visibles */}
+        {packages.length > 0 && (
+          <section id="paquetes" className="relative scroll-mt-20 py-20 md:py-28">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <SectionHeading
+                eyebrow="Paquetes"
+                eyebrowClassName="text-brand-violet"
+                title="Combina y ahorra"
+                description="Nuestras fórmulas juntas, a un precio especial. Pídelo por WhatsApp y te lo preparamos."
+              />
+              <Reveal>
+                <div className="mt-12 flex flex-wrap justify-center gap-6 lg:gap-8">
+                  {packages.map((pkg) => (
+                    <PackageCard
+                      key={pkg.id}
+                      pkg={pkg}
+                      productsById={productsById}
+                      className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-22px)]"
+                    />
+                  ))}
+                </div>
+              </Reveal>
+            </div>
+          </section>
+        )}
+
         <Benefits />
         <ContactCTA />
       </main>
-      <Footer />
+      <Footer hiddenNav={packages.length > 0 ? [] : ["paquetes"]} />
       <FloatingWhatsApp />
     </>
   );

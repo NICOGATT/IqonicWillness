@@ -13,10 +13,12 @@ import { siteConfig } from "@/config/site";
  * - Resalta la sección visible.
  * - Menú desplegable en móvil.
  */
-export function Navbar() {
+export function Navbar({ hiddenNav = [] }: { hiddenNav?: string[] }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string>(siteConfig.nav[0].id);
+  // Secciones que esta página no tiene (p. ej. "paquetes" si no hay ninguno)
+  const navItems = siteConfig.nav.filter((item) => !hiddenNav.includes(item.id));
 
   // Estado "scrolled"
   useEffect(() => {
@@ -60,7 +62,7 @@ export function Navbar() {
         <Logo />
 
         <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-400 md:flex">
-          {siteConfig.nav.map((item) => (
+          {navItems.map((item) => (
             <li key={item.id}>
               <a
                 href={item.href}
@@ -99,7 +101,7 @@ export function Navbar() {
       {open && (
         <div id="mobile-menu" className="border-t border-white/5 bg-ink-950/95 md:hidden">
           <ul className="flex flex-col gap-1 px-4 py-4 text-base font-medium">
-            {siteConfig.nav.map((item) => (
+            {navItems.map((item) => (
               <li key={item.id}>
                 <a href={item.href} onClick={() => setOpen(false)} className="block rounded-xl px-4 py-3 hover:bg-white/5">
                   {item.label}
