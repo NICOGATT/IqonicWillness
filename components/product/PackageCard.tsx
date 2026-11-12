@@ -1,6 +1,6 @@
-import Image from "next/image";
 import type { CSSProperties } from "react";
 
+import { CutoutImage } from "@/components/product/CutoutImage";
 import { ProductArt } from "@/components/product/ProductArt";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { formatPrice } from "@/lib/format";
@@ -42,14 +42,7 @@ export function PackageCard({ pkg, productsById, className = "" }: PackageCardPr
 
         {pkg.imageUrl ? (
           <div className="art relative h-52 w-full max-w-xs sm:h-56">
-            <Image
-              src={pkg.imageUrl}
-              alt={pkg.name}
-              fill
-              sizes="(min-width: 1024px) 320px, 90vw"
-              className="object-contain"
-              unoptimized={/^https?:\/\//.test(pkg.imageUrl)}
-            />
+            <CutoutImage src={pkg.imageUrl} alt={pkg.name} sizes="(min-width: 1024px) 320px, 90vw" />
           </div>
         ) : (
           <div className="art relative flex h-52 items-end justify-center sm:h-56">

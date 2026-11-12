@@ -5,6 +5,7 @@ import { useRef, useState, type DragEvent } from "react";
 
 import { getImageUploadSignature } from "@/app/admin/actions";
 import { Spinner } from "@/components/ui/fields";
+import { cloudinaryWithoutBackground } from "@/lib/cloudinary-url";
 
 const MAX_BYTES = 10 * 1024 * 1024; // límite del plan gratuito de Cloudinary
 const ACCEPT = "image/png,image/jpeg,image/webp,image/avif,image/gif";
@@ -46,7 +47,11 @@ export function ImageUpload({ onUploaded }: ImageUploadProps) {
       if (!res.ok || !json.secure_url) throw new Error(json.error?.message ?? "Cloudinary rechazó la imagen.");
 
       // f_auto,q_auto: Cloudinary sirve WebP/AVIF y comprime según el navegador del cliente
-      onUploaded(json.secure_url.replace("/image/upload/", "/image/upload/f_auto,q_auto/"));
+      const url = json.secure_url.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+      // Pide ya la versión sin fondo para que Cloudinary la procese antes de que la vea un cliente
+      const cutout = cloudinaryWithoutBackground(url);
+      if (cutout) new window.Image().src = cutout;
+      onUploaded(url);
     } catch (e) {
       console.error("[admin] subida de imagen:", e);
       if (unstable_isUnrecognizedActionError(e)) {
