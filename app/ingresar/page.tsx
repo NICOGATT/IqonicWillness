@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignInForm } from "@/components/auth/SignInForm";
 
-export const metadata = { title: "Ingresar · IQONIC THRIVE" };
+export const metadata = { title: "Ingresar · IQONIC WELLNESS" };
 
 export default function SignInPage() {
   return (

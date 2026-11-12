@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/fields";
 import { getCustomersForAdmin } from "@/lib/admin-products";
 import { getAdminSession } from "@/lib/auth";
 
-export const metadata = { title: "Clientes · Panel IQONIC THRIVE" };
+export const metadata = { title: "Clientes · Panel IQONIC WELLNESS" };
 
 /** /admin/clientes — Clientes registrados (solo lectura). */
 export default function AdminCustomersPage() {

@@ -1,5 +1,5 @@
 -- =====================================================================
--- IQONIC THRIVE · Esquema de productos + seguridad (RLS)
+-- IQONIC WELLNESS · Esquema de productos + seguridad (RLS)
 -- Ejecutar en Supabase → SQL Editor → New query → Run.
 -- Es idempotente: se puede volver a ejecutar sin romper nada.
 -- =====================================================================

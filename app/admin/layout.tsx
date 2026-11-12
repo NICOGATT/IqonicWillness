@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Panel · IQONIC THRIVE",
+  title: "Panel · IQONIC WELLNESS",
   // El panel no debe aparecer en buscadores
   robots: { index: false, follow: false },
 };

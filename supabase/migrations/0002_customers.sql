@@ -1,5 +1,5 @@
 -- =====================================================================
--- IQONIC THRIVE · Clientes
+-- IQONIC WELLNESS · Clientes
 -- Ejecutar DESPUÉS de 0001_products.sql (SQL Editor → New query → Run).
 -- Es idempotente: se puede volver a ejecutar.
 --

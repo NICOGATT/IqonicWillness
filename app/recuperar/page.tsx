@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { ResetRequestForm } from "@/components/auth/PasswordForms";
 
-export const metadata = { title: "Recuperar contraseña · IQONIC THRIVE" };
+export const metadata = { title: "Recuperar contraseña · IQONIC WELLNESS" };
 
 export default function ResetPasswordPage() {
   return (

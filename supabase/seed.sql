@@ -1,5 +1,5 @@
 -- =====================================================================
--- IQONIC THRIVE · Carga inicial de los 5 productos
+-- IQONIC WELLNESS · Carga inicial de los 5 productos
 -- Ejecutar DESPUÉS de migrations/0001_products.sql.
 -- Si el slug ya existe, actualiza el producto (se puede volver a ejecutar).
 -- Los precios quedan en NULL: complétalos desde /admin.

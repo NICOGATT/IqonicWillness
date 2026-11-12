@@ -3,7 +3,7 @@ import Link from "next/link";
 import { StatusPage } from "@/components/layout/StatusPage";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 
-export const metadata = { title: "Pago cancelado · IQONIC THRIVE", robots: { index: false } };
+export const metadata = { title: "Pago cancelado · IQONIC WELLNESS", robots: { index: false } };
 
 /** Stripe redirige aquí si el cliente cancela el pago (cancel_url de la API Express). */
 export default function PaymentCancelledPage() {

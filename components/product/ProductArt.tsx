@@ -73,7 +73,7 @@ function JarArt({ product, uid }: ProductArtProps) {
       <rect x="44" y="54" width="112" height="166" rx="24" fill={`url(#body-${uid})`} />
       <rect x="44" y="92" width="112" height="94" fill={`url(#label-${uid})`} />
       <g textAnchor="middle" fontWeight="700" fill="#0a0a0c">
-        <text x="100" y="108" fontSize="6.5" letterSpacing="2.4" fillOpacity=".7">IQONIC THRIVE</text>
+        <text x="100" y="108" fontSize="6.5" letterSpacing="2.4" fillOpacity=".7">IQONIC WELLNESS</text>
         <text x="100" y={136 + (22 - fs) / 3} fontSize={fs} fontWeight="800">{title}</text>
         <text x="100" y="152" fontSize="7.5" letterSpacing="1.6" fillOpacity=".75">{subtitle}</text>
       </g>
@@ -126,7 +126,7 @@ function PouchArt({ product, uid }: ProductArtProps) {
         <rect x="49" y="46" width="8" height="160" rx="4" fill="#fff" fillOpacity=".06" />
       </g>
       <g textAnchor="middle" fontWeight="800">
-        <text x="100" y="66" fontSize="6.5" fontWeight="700" letterSpacing="2.4" fill="#fff" fillOpacity=".55">IQONIC THRIVE</text>
+        <text x="100" y="66" fontSize="6.5" fontWeight="700" letterSpacing="2.4" fill="#fff" fillOpacity=".55">IQONIC WELLNESS</text>
         <text x="100" y={titleY} fontSize={fsTitle} fill="#fff">{title}</text>
         <text x="100" y={subY} fontSize={fsSub} letterSpacing={subIsBig ? 0 : 1.4} fill={from}>{subtitle}</text>
       </g>

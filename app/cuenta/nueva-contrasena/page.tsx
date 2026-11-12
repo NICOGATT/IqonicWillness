@@ -1,7 +1,7 @@
 import { AuthShell } from "@/components/auth/AuthShell";
 import { NewPasswordForm } from "@/components/auth/PasswordForms";
 
-export const metadata = { title: "Nueva contraseña · IQONIC THRIVE", robots: { index: false } };
+export const metadata = { title: "Nueva contraseña · IQONIC WELLNESS", robots: { index: false } };
 
 /**
  * Se llega aquí desde "Cambiar contraseña" (con sesión) o desde el enlace

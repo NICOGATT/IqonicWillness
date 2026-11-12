@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/fields";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { getCustomerSession } from "@/lib/customer";
 
-export const metadata = { title: "Mi cuenta · IQONIC THRIVE", robots: { index: false } };
+export const metadata = { title: "Mi cuenta · IQONIC WELLNESS", robots: { index: false } };
 
 /**
  * /cuenta — Área privada del cliente.

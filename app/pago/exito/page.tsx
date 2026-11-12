@@ -3,7 +3,7 @@ import Link from "next/link";
 import { StatusPage } from "@/components/layout/StatusPage";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 
-export const metadata = { title: "¡Pago recibido! · IQONIC THRIVE", robots: { index: false } };
+export const metadata = { title: "¡Pago recibido! · IQONIC WELLNESS", robots: { index: false } };
 
 /**
  * Stripe redirige aquí tras un pago correcto (success_url de la API Express).

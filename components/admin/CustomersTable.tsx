@@ -39,7 +39,7 @@ export function CustomersTable({ customers }: { customers: CustomerRow[] }) {
       .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: "clientes-iqonic-thrive.csv" });
+    const a = Object.assign(document.createElement("a"), { href: url, download: "clientes-iqonic-wellness.csv" });
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -99,7 +99,7 @@ export function CustomersTable({ customers }: { customers: CustomerRow[] }) {
                     <td className="px-5 py-3">
                       {c.phone ? (
                         <a
-                          href={buildWhatsAppUrl(`Hola ${c.first_name ?? ""}, te escribimos de IQONIC THRIVE.`, c.phone)}
+                          href={buildWhatsAppUrl(`Hola ${c.first_name ?? ""}, te escribimos de IQONIC WELLNESS.`, c.phone)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-wa hover:underline"

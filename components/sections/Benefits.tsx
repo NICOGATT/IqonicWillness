@@ -63,7 +63,7 @@ export function Benefits() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="Por qué IQONIC THRIVE"
+          eyebrow="Por qué IQONIC WELLNESS"
           eyebrowClassName="text-brand-violet-light"
           title="Hecho para quienes exigen más"
           description="Tres pilares guían cada fórmula que llega a tus manos."

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 
-export const metadata = { title: "Crear cuenta · IQONIC THRIVE" };
+export const metadata = { title: "Crear cuenta · IQONIC WELLNESS" };
 
 export default function SignUpPage() {
   return (

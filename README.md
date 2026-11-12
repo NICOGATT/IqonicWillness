@@ -1,4 +1,4 @@
-# IQONIC THRIVE · Catálogo digital
+# IQONIC WELLNESS · Catálogo digital
 
 Catálogo de productos de bienestar y rendimiento con pedidos por WhatsApp.
 Next.js 16 (App Router + Cache Components), React 19, Tailwind CSS v4, TypeScript y Supabase

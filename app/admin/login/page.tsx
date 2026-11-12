@@ -5,7 +5,7 @@ import { SetupNotice } from "@/components/admin/SetupNotice";
 import { Logo } from "@/components/ui/Logo";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
 
-export const metadata = { title: "Iniciar sesión · Panel IQONIC THRIVE" };
+export const metadata = { title: "Iniciar sesión · Panel IQONIC WELLNESS" };
 
 /**
  * Login del panel (Email + Password de Supabase Auth).
