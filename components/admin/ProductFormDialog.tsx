@@ -4,6 +4,7 @@ import { startTransition, useActionState, useId, useState, type FormEvent } from
 
 import { saveProduct, type ActionState } from "@/app/admin/actions";
 import { Field, inputClass, Spinner } from "@/components/ui/fields";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import { Modal } from "@/components/admin/Modal";
 import { BenefitIcon } from "@/components/product/BenefitIcon";
 import { ProductArt } from "@/components/product/ProductArt";
@@ -249,15 +250,29 @@ export function ProductFormDialog({ product, onClose, onSaved }: ProductFormDial
           {/* --- Imagen y colores --- */}
           <fieldset className="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
             <legend className="mb-4 font-display text-sm font-bold text-white">Imagen y colores</legend>
-            <Field label="URL de imagen" htmlFor={id("image_url")} error={errors.image_url} hint="Vacío = ilustración automática">
-              <input
-                {...a11y("image_url")}
-                value={preview.image}
-                onChange={set("image")}
-                type="url"
-                className={inputClass}
-                placeholder="https://…/producto.png"
-              />
+            <Field label="Imagen" htmlFor={id("image_url")} error={errors.image_url} hint="Vacío = ilustración automática">
+              <div className="space-y-2">
+                <ImageUpload onUploaded={(url) => setPreview((p) => ({ ...p, image: url }))} />
+                <div className="flex gap-2">
+                  <input
+                    {...a11y("image_url")}
+                    value={preview.image}
+                    onChange={set("image")}
+                    type="url"
+                    className={inputClass}
+                    placeholder="…o pega una URL https://"
+                  />
+                  {preview.image && (
+                    <button
+                      type="button"
+                      onClick={() => setPreview((p) => ({ ...p, image: "" }))}
+                      className="shrink-0 rounded-xl px-3 text-xs font-semibold text-zinc-400 transition hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              </div>
             </Field>
             <Field label="Acento" htmlFor={id("accent_from")} error={errors.accent_from}>
               <input {...a11y("accent_from")} type="color" value={preview.accentFrom} onChange={set("accentFrom")} className="h-[42px] w-20 cursor-pointer rounded-xl border border-white/10 bg-ink-950/60 p-1" />

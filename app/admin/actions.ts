@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAdminSession } from "@/lib/auth";
+import { createUploadSignature, type CloudinaryUploadSignature } from "@/lib/cloudinary";
 import { PRODUCTS_CACHE_TAG } from "@/lib/products";
 import { formDataToProductInput, productFormSchema, toFieldErrors } from "@/lib/validation/product";
 import type { ProductInsert, ProductUpdate } from "@/types/database";
@@ -101,6 +102,24 @@ export async function saveProduct(_prev: ActionState, formData: FormData): Promi
 
   revalidateCatalog();
   return { status: "success", message: id ? "Producto actualizado." : "Producto creado." };
+}
+
+/**
+ * Firma para que el panel suba una imagen directo a Cloudinary.
+ * Solo admins: sin firma válida Cloudinary rechaza la subida.
+ */
+export async function getImageUploadSignature(): Promise<
+  { ok: true; data: CloudinaryUploadSignature } | { ok: false; message: string }
+> {
+  const auth = await requireAdminAction();
+  if (!auth.ok) return { ok: false, message: auth.state.message };
+
+  const data = createUploadSignature();
+  if (!data) {
+    console.error("[admin] Cloudinary no configurado: faltan CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET");
+    return { ok: false, message: "La subida de imágenes no está configurada (faltan las variables de Cloudinary)." };
+  }
+  return { ok: true, data };
 }
 
 export async function deleteProduct(id: string): Promise<ActionState> {
