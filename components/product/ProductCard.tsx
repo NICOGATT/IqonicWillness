@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { BenefitIcon } from "@/components/product/BenefitIcon";
@@ -26,7 +27,7 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
   return (
     <article
       style={accentVars}
-      className={`product-card group relative flex flex-col overflow-hidden rounded-[1.75rem] ${className}`}
+      className={`product-card group relative flex cursor-pointer flex-col overflow-hidden rounded-[1.75rem] ${className}`}
     >
       {/* Visual */}
       <div className="art-stage relative flex h-64 items-center justify-center overflow-hidden sm:h-72">
@@ -44,7 +45,15 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
       {/* Contenido */}
       <div className="flex flex-1 flex-col p-6 pt-2 sm:p-7 sm:pt-3">
         <p className="text-accent text-xs font-semibold uppercase tracking-[0.18em]">{product.type}</p>
-        <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-white">{product.name}</h3>
+        <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-white">
+          {/* El ::after cubre toda la tarjeta: clic en cualquier parte = ir al detalle */}
+          <Link
+            href={`/productos/${product.slug}`}
+            className="outline-none after:absolute after:inset-0 after:z-[1] after:rounded-[1.75rem] focus-visible:after:ring-2 focus-visible:after:ring-white/60"
+          >
+            {product.name}
+          </Link>
+        </h3>
         {product.description && (
           <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-400">{product.description}</p>
         )}
@@ -81,10 +90,15 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
           )}
         </div>
 
+        <p className="text-accent mt-4 text-center text-sm font-semibold opacity-80 transition group-hover:opacity-100">
+          Ver detalle →
+        </p>
+
         <WhatsAppButton
           variant="accent"
           fullWidth
-          className="mt-6"
+          // Por encima del enlace de la tarjeta para que siga abriendo WhatsApp
+          className="relative z-[2] mt-4"
           message={getProductMessage(product)}
           ariaLabel={`Pedir ${product.name} sabor ${product.flavor} por WhatsApp`}
         />

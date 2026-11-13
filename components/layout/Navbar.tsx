@@ -13,10 +13,17 @@ import { siteConfig } from "@/config/site";
  * - Resalta la sección visible.
  * - Menú desplegable en móvil.
  */
-export function Navbar({ hiddenNav = [] }: { hiddenNav?: string[] }) {
+export function Navbar({
+  hiddenNav = [],
+  defaultActive = siteConfig.nav[0].id,
+}: {
+  hiddenNav?: string[];
+  /** Sección marcada al cargar (p. ej. "productos" en el detalle de un producto). */
+  defaultActive?: string;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string>(siteConfig.nav[0].id);
+  const [activeId, setActiveId] = useState<string>(defaultActive);
   // Secciones que esta página no tiene (p. ej. "paquetes" si no hay ninguno)
   const navItems = siteConfig.nav.filter((item) => !hiddenNav.includes(item.id));
 
