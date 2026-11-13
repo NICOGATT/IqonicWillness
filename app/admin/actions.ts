@@ -9,7 +9,7 @@ import { createUploadSignature, type CloudinaryUploadSignature } from "@/lib/clo
 import { PRODUCTS_CACHE_TAG } from "@/lib/products";
 import { formDataToPackageInput, packageFormSchema } from "@/lib/validation/package";
 import { formDataToProductInput, productFormSchema, toFieldErrors } from "@/lib/validation/product";
-import type { ProductInsert, ProductUpdate } from "@/types/database";
+import { ORDER_STATUSES, type ProductInsert, type ProductUpdate } from "@/types/database";
 import { createClient } from "@/utils/supabase/server";
 
 /**
@@ -197,4 +197,36 @@ export async function deleteProduct(id: string): Promise<ActionState> {
 
   revalidateCatalog();
   return { status: "success", message: "Producto eliminado." };
+}
+
+// ---------------------------------------------------------------------
+// Pedidos
+// ---------------------------------------------------------------------
+
+const orderUpdateSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(ORDER_STATUSES),
+  adminNotes: z.string().trim().max(2000).optional(),
+});
+
+/** Cambia el estado de un pedido y (opcional) sus notas internas. */
+export async function updateOrder(input: z.input<typeof orderUpdateSchema>): Promise<ActionState> {
+  const auth = await requireAdminAction();
+  if (!auth.ok) return auth.state;
+
+  const parsed = orderUpdateSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", message: "Datos del pedido inválidos." };
+
+  const { id, status, adminNotes } = parsed.data;
+  const { error, count } = await auth.supabase
+    .from("orders")
+    .update({ status, ...(adminNotes !== undefined ? { admin_notes: adminNotes || null } : {}) }, { count: "exact" })
+    .eq("id", id);
+  if (error || count === 0) {
+    console.error("[admin] updateOrder:", error);
+    return { status: "error", message: "No se pudo actualizar el pedido." };
+  }
+
+  refresh();
+  return { status: "success", message: "Pedido actualizado." };
 }

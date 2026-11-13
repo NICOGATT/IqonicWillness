@@ -26,6 +26,8 @@
   --animate-marquee: marquee 38s linear infinite;
   --animate-ping-soft: ping-soft 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-card-in: card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-drawer-in: drawer-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-badge-pop: badge-pop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @keyframes float {
     0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
@@ -42,6 +44,15 @@
   @keyframes card-in {
     from { opacity: 0; transform: translateY(16px) scale(0.98); }
     to { opacity: 1; transform: none; }
+  }
+  @keyframes drawer-in {
+    from { transform: translateX(100%); }
+    to { transform: none; }
+  }
+  @keyframes badge-pop {
+    0% { transform: scale(0.4); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
   }
 }
 
@@ -174,7 +185,7 @@
 /* Accesibilidad: respeta "reducir movimiento" */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .animate-float, .animate-marquee, .animate-ping-soft, .animate-card-in { animation: none !important; }
+  .animate-float, .animate-marquee, .animate-ping-soft, .animate-card-in, .animate-drawer-in, .animate-badge-pop { animation: none !important; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .product-card, .product-card .art { transition: none; }
 }

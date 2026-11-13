@@ -3,7 +3,9 @@ import type { CSSProperties } from "react";
 
 import { BenefitIcon } from "@/components/product/BenefitIcon";
 import { ProductArt } from "@/components/product/ProductArt";
-import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import { WhatsAppIconLink } from "@/components/whatsapp/WhatsAppIconLink";
+import { productToCartItem } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import { getProductMessage } from "@/lib/whatsapp";
 import type { Product } from "@/types/product";
@@ -94,14 +96,18 @@ export function ProductCard({ product, className = "" }: ProductCardProps) {
           Ver detalle →
         </p>
 
-        <WhatsAppButton
-          variant="accent"
-          fullWidth
-          // Por encima del enlace de la tarjeta para que siga abriendo WhatsApp
-          className="relative z-[2] mt-4"
-          message={getProductMessage(product)}
-          ariaLabel={`Pedir ${product.name} sabor ${product.flavor} por WhatsApp`}
-        />
+        {/* z-[2]: por encima del enlace que cubre la tarjeta */}
+        <div className="relative z-[2] mt-4 flex gap-2">
+          <AddToCartButton
+            item={productToCartItem(product)}
+            className="flex-1"
+            ariaLabel={`Agregar ${product.name} sabor ${product.flavor} al carrito`}
+          />
+          <WhatsAppIconLink
+            message={getProductMessage(product)}
+            label={`Consultar por ${product.name} sabor ${product.flavor} en WhatsApp`}
+          />
+        </div>
       </div>
     </article>
   );

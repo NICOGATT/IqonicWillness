@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { CartButton } from "@/components/cart/CartButton";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { AccountLink } from "@/components/layout/AccountLink";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
@@ -89,6 +91,7 @@ export function Navbar({
           <div className="hidden sm:block">
             <WhatsAppButton size="sm">Hablar por WhatsApp</WhatsAppButton>
           </div>
+          <CartButton />
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -124,6 +127,9 @@ export function Navbar({
           </ul>
         </div>
       )}
+
+      {/* Panel del carrito (se abre desde CartButton o al agregar un producto) */}
+      <CartDrawer />
     </header>
   );
 }

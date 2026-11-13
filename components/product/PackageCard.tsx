@@ -2,7 +2,9 @@ import type { CSSProperties } from "react";
 
 import { CutoutImage } from "@/components/product/CutoutImage";
 import { ProductArt } from "@/components/product/ProductArt";
-import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import { WhatsAppIconLink } from "@/components/whatsapp/WhatsAppIconLink";
+import { packageToCartItem } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import { getPackageMessage } from "@/lib/whatsapp";
 import type { ProductPackage } from "@/types/package";
@@ -109,15 +111,14 @@ export function PackageCard({ pkg, productsById, className = "" }: PackageCardPr
           <p className="font-display text-2xl font-bold text-white">{formatPrice(pkg.price)}</p>
         </div>
 
-        <WhatsAppButton
-          variant="accent"
-          fullWidth
-          className="mt-6"
-          message={getPackageMessage(pkg)}
-          ariaLabel={`Pedir el paquete ${pkg.name} por WhatsApp`}
-        >
-          Pedir paquete por WhatsApp
-        </WhatsAppButton>
+        <div className="mt-6 flex gap-2">
+          <AddToCartButton
+            item={packageToCartItem(pkg)}
+            className="flex-1"
+            ariaLabel={`Agregar el paquete ${pkg.name} al carrito`}
+          />
+          <WhatsAppIconLink message={getPackageMessage(pkg)} label={`Consultar por el paquete ${pkg.name} en WhatsApp`} />
+        </div>
       </div>
     </article>
   );

@@ -4,6 +4,7 @@ import { signOut } from "@/app/admin/actions";
 import { Logo } from "@/components/ui/Logo";
 
 const sections = [
+  { href: "/admin/pedidos", label: "Pedidos", id: "pedidos" },
   { href: "/admin", label: "Productos", id: "productos" },
   { href: "/admin/paquetes", label: "Paquetes", id: "paquetes" },
   { href: "/admin/clientes", label: "Clientes", id: "clientes" },

@@ -148,3 +148,14 @@ y `/admin` muestra un aviso. Útil para desarrollar el diseño sin conexión.
   añadir un campo de subida al formulario (hoy se pega una URL).
 - **Tipos generados**: `npx supabase gen types typescript --project-id <id> > types/database.ts`.
 - **Migraciones con la CLI**: `npx supabase link` + `npx supabase db push` para versionar cambios de esquema.
+
+## Paso 8 · Pedidos (carrito → WhatsApp, y más adelante Stripe)
+
+1. **SQL Editor → New query**: pega [`supabase/migrations/0004_orders.sql`](supabase/migrations/0004_orders.sql) y pulsa **Run**
+   (necesita 0001, 0002 y 0003 ya ejecutadas).
+2. Crea `orders`, `order_items` y `payments`, sus reglas RLS y la función `create_order()`.
+3. Prueba: agrega productos al carrito → **Pedir por WhatsApp** → el mensaje lleva el número de pedido (`#1001`)
+   y el pedido aparece en **`/admin/pedidos`**.
+
+Si la migración no está ejecutada, el carrito sigue funcionando: manda el pedido por WhatsApp sin número y
+no lo guarda.

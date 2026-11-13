@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { AdminSession } from "@/lib/auth";
-import type { CustomerRow, PackageWithItemsRow } from "@/types/database";
+import type { CustomerRow, OrderItemRow, OrderRow, PackageWithItemsRow } from "@/types/database";
 import { rowToProduct } from "@/lib/product-mapper";
 import type { Product } from "@/types/product";
 
@@ -56,4 +56,48 @@ export async function getCustomersForAdmin(supabase: AdminClient): Promise<Custo
 
   if (error) throw new Error(`No se pudieron cargar los clientes: ${error.message}`);
   return data;
+}
+
+export type AdminOrder = OrderRow & { items: OrderItemRow[] };
+
+/**
+ * Últimos pedidos con sus líneas (más recientes primero).
+ * RLS solo devuelve todos si el usuario está en `admins`.
+ * Devuelve null si falta la migración 0004_orders.sql.
+ */
+export async function getOrdersForAdmin(supabase: AdminClient): Promise<AdminOrder[] | null> {
+  const { data: orders, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (error) {
+    console.error("[admin] No se pudieron cargar los pedidos:", error.message);
+    return null;
+  }
+  if (orders.length === 0) return [];
+
+  const { data: items, error: itemsError } = await supabase
+    .from("order_items")
+    .select("*")
+    .in("order_id", orders.map((o) => o.id))
+    .order("sort_order");
+  if (itemsError) {
+    console.error("[admin] No se pudieron cargar las líneas de los pedidos:", itemsError.message);
+    return null;
+  }
+
+  const byOrder = new Map<string, OrderItemRow[]>();
+  for (const item of items) byOrder.set(item.order_id, [...(byOrder.get(item.order_id) ?? []), item]);
+  return orders.map((o) => ({
+    ...o,
+    subtotal: Number(o.subtotal),
+    shipping: Number(o.shipping),
+    total: Number(o.total),
+    items: (byOrder.get(o.id) ?? []).map((i) => ({
+      ...i,
+      unit_price: i.unit_price === null ? null : Number(i.unit_price),
+      line_total: i.line_total === null ? null : Number(i.line_total),
+    })),
+  }));
 }

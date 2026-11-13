@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { BenefitIcon } from "@/components/product/BenefitIcon";
@@ -11,6 +12,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { FloatingWhatsApp } from "@/components/whatsapp/FloatingWhatsApp";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { siteConfig } from "@/config/site";
+import { productToCartItem } from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import { getPackages } from "@/lib/packages";
 import { getProductBySlug, getProducts } from "@/lib/products";
@@ -144,13 +146,21 @@ export default async function ProductPage({ params }: PageProps<"/productos/[slu
                 </p>
               </div>
 
-              <WhatsAppButton
-                variant="accent"
-                size="lg"
-                className="mt-8 w-full sm:w-auto"
-                message={getProductMessage(product)}
-                ariaLabel={`Pedir ${product.name} sabor ${product.flavor} por WhatsApp`}
-              />
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <AddToCartButton
+                  item={productToCartItem(product)}
+                  size="lg"
+                  ariaLabel={`Agregar ${product.name} sabor ${product.flavor} al carrito`}
+                />
+                <WhatsAppButton
+                  variant="outline"
+                  size="lg"
+                  message={getProductMessage(product)}
+                  ariaLabel={`Consultar por ${product.name} sabor ${product.flavor} en WhatsApp`}
+                >
+                  Consultar por WhatsApp
+                </WhatsAppButton>
+              </div>
 
               {product.description && (
                 <section className="mt-10">

@@ -111,6 +111,81 @@ export type CustomerRow = {
   updated_at: string;
 };
 
+export const ORDER_STATUSES = ["pending", "confirmed", "paid", "shipped", "delivered", "cancelled", "refunded"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export type OrderChannel = "whatsapp" | "stripe" | "mercadopago" | "manual";
+
+/** Pedido. Los totales los calcula create_order() con precios de la BD. */
+export type OrderRow = {
+  id: string;
+  /** Número legible (#1001). */
+  number: number;
+  customer_id: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  status: OrderStatus;
+  channel: OrderChannel;
+  currency: string;
+  subtotal: number;
+  shipping: number;
+  total: number;
+  has_unpriced_items: boolean;
+  customer_note: string | null;
+  admin_notes: string | null;
+  shipping_address: Json | null;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Línea del pedido: nombre y precio copiados al momento de la compra. */
+export type OrderItemRow = {
+  id: string;
+  order_id: string;
+  kind: "product" | "package";
+  product_id: string | null;
+  package_id: string | null;
+  name: string;
+  detail: string | null;
+  unit_price: number | null;
+  quantity: number;
+  line_total: number | null;
+  sort_order: number;
+  created_at: string;
+};
+
+export type PaymentRow = {
+  id: string;
+  order_id: string;
+  provider: "stripe" | "mercadopago" | "cash" | "transfer";
+  provider_payment_id: string | null;
+  status: "pending" | "succeeded" | "failed" | "refunded";
+  amount: number;
+  currency: string;
+  raw: Json | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Lo que devuelve create_order(). */
+export type CreatedOrder = Pick<
+  OrderRow,
+  | "id"
+  | "number"
+  | "status"
+  | "channel"
+  | "currency"
+  | "subtotal"
+  | "shipping"
+  | "total"
+  | "has_unpriced_items"
+  | "contact_name"
+  | "customer_note"
+> & {
+  items: Pick<OrderItemRow, "kind" | "name" | "detail" | "unit_price" | "quantity" | "line_total">[];
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -145,6 +220,26 @@ export type Database = {
         Update: Partial<PackageItemRow>;
         Relationships: [];
       };
+      orders: {
+        Row: OrderRow;
+        // Se crean con create_order(); el admin solo cambia estado y notas
+        Insert: never;
+        Update: Partial<Pick<OrderRow, "status" | "admin_notes" | "shipping" | "shipping_address">>;
+        Relationships: [];
+      };
+      order_items: {
+        Row: OrderItemRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      payments: {
+        Row: PaymentRow;
+        Insert: Omit<PaymentRow, "id" | "created_at" | "updated_at" | "raw" | "provider_payment_id" | "status"> &
+          Partial<Pick<PaymentRow, "raw" | "provider_payment_id" | "status">>;
+        Update: Partial<Pick<PaymentRow, "status" | "raw">>;
+        Relationships: [];
+      };
     };
     Views: {
       packages_with_items: {
@@ -156,6 +251,11 @@ export type Database = {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       /** Crea o actualiza un paquete y reemplaza su contenido (transacción). Devuelve el id. */
       admin_save_package: { Args: { p_package: Json; p_items: Json }; Returns: string };
+      /** Crea un pedido con precios de la BD. Devuelve CreatedOrder (jsonb). */
+      create_order: {
+        Args: { p_items: Json; p_note?: string | null; p_channel?: "whatsapp" | "stripe"; p_currency?: string };
+        Returns: Json;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

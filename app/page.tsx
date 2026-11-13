@@ -40,9 +40,9 @@ export default async function HomePage() {
               title="Elige tu fórmula"
               description={
                 <>
-                  Fórmulas con un mismo objetivo: que rindas y te sientas bien cada día. Toca{" "}
-                  <span className="text-zinc-200">“Pedir por WhatsApp”</span> y te respondemos con disponibilidad y
-                  precio.
+                  Fórmulas con un mismo objetivo: que rindas y te sientas bien cada día. Agrégalas al carrito y envíanos
+                  el pedido con <span className="text-zinc-200">“Pedir por WhatsApp”</span>: te respondemos con
+                  disponibilidad y entrega.
                 </>
               }
             />
