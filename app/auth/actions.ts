@@ -50,7 +50,10 @@ const withoutPasswords = (values: Record<string, string>) => {
 // Registro
 // ---------------------------------------------------------------------
 export async function signUpCustomer(_prev: FormState, formData: FormData): Promise<FormState> {
-  const raw = formToObject(formData, ["first_name", "last_name", "phone", "birth_date", "email", "password", "password_confirm"]);
+  const raw = formToObject(formData, ["first_name", "last_name", "phone", "birth_date", "email", "password", "password_confirm", "next"]);
+  // Adónde volver al terminar (p. ej. /pago si venía del checkout); solo rutas internas
+  const next = safeNextPath(raw.next);
+  delete raw.next;
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
     return { status: "error", message: "Revisa los campos marcados.", fieldErrors: toFieldErrors(parsed.error), values: withoutPasswords(raw) };
@@ -64,7 +67,7 @@ export async function signUpCustomer(_prev: FormState, formData: FormData): Prom
     options: {
       // El trigger handle_new_customer() copia estos datos a public.customers
       data: { first_name, last_name, phone, birth_date },
-      emailRedirectTo: `${await getSiteUrl()}/auth/callback?next=/cuenta`,
+      emailRedirectTo: `${await getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
@@ -82,7 +85,7 @@ export async function signUpCustomer(_prev: FormState, formData: FormData): Prom
   }
 
   // Si el proyecto no exige confirmar el correo, ya hay sesión
-  if (data.session) redirect("/cuenta");
+  if (data.session) redirect(next);
 
   // Mensaje neutro: Supabase no revela si el correo ya estaba registrado
   return {

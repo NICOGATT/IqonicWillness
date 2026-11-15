@@ -95,8 +95,10 @@ export interface OrderMessageInput {
   note?: string | null;
   /** Número del pedido guardado en Supabase (#1001). */
   orderNumber?: number | null;
-  /** Nombre del cliente si inició sesión. */
+  /** Nombre del cliente (sesión o formulario de /pago). */
   contactName?: string | null;
+  /** Datos del checkout: forma de pago, entrega, teléfono… (una línea cada uno). */
+  details?: string[];
 }
 
 /**
@@ -110,7 +112,15 @@ export interface OrderMessageInput {
  *
  *   Total: US$89.70
  */
-export function buildOrderMessage({ lines, total, hasUnpriced, note, orderNumber, contactName }: OrderMessageInput): string {
+export function buildOrderMessage({
+  lines,
+  total,
+  hasUnpriced,
+  note,
+  orderNumber,
+  contactName,
+  details,
+}: OrderMessageInput): string {
   if (lines.length === 0) return siteConfig.generalMessage;
 
   const body = lines.map((item, index) => {
@@ -129,18 +139,24 @@ export function buildOrderMessage({ lines, total, hasUnpriced, note, orderNumber
   const header = orderNumber ? `${greeting} (#${orderNumber}):` : `${greeting}:`;
 
   const parts = [header, body.join("\n"), totalLine];
+  if (details?.length) parts.push(details.join("\n"));
   const cleanNote = note?.trim();
   if (cleanNote) parts.push(`Comentario: ${cleanNote}`);
   return parts.join("\n\n");
 }
 
 /** Mensaje con los datos del navegador (respaldo si no se pudo guardar el pedido). */
-export function getCartMessage(items: CartItem[], note = ""): string {
+export function getCartMessage(
+  items: CartItem[],
+  note = "",
+  extra?: Pick<OrderMessageInput, "contactName" | "details">,
+): string {
   const { total, hasUnpriced } = getCartTotals(items);
   return buildOrderMessage({
     lines: items.map((i) => ({ kind: i.kind, name: i.name, detail: i.detail, unitPrice: i.price, quantity: i.quantity })),
     total,
     hasUnpriced,
     note,
+    ...extra,
   });
 }

@@ -9,6 +9,7 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { getCartMessage, getCartTotals, getItemCount, MAX_QUANTITY, type CartItem } from "@/lib/cart";
 import { clearCart, removeFromCart, setCartOpen, setQuantity, useCartItems, useCartOpen } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
+import { useSignedIn } from "@/lib/use-signed-in";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 /**
@@ -18,6 +19,7 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 export function CartDrawer() {
   const items = useCartItems();
   const open = useCartOpen();
+  const signedIn = useSignedIn();
   const ref = useRef<HTMLDialogElement>(null);
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
@@ -204,21 +206,34 @@ export function CartDrawer() {
                 </p>
               )}
 
+              <Link
+                // Sin sesión: primero ingresar, y después vuelve al checkout
+                href={signedIn === false ? "/ingresar?next=/pago" : "/pago"}
+                onClick={() => setCartOpen(false)}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-orange to-brand-violet px-5 py-3.5 text-[15px] font-bold text-white shadow-[0_12px_40px_-12px_rgb(157_92_255/0.7)] transition hover:-translate-y-0.5"
+              >
+                {signedIn === false ? "Ingresar para pagar" : "Continuar al pago"}
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </Link>
               <a
                 href={fallbackUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={placeOrder}
                 aria-disabled={pending}
-                className={`btn-wa mt-4 inline-flex w-full items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-[15px] font-bold text-ink-950 ${
+                className={`mt-2.5 inline-flex w-full items-center justify-center gap-2.5 rounded-2xl border border-wa/40 px-5 py-3 text-sm font-bold text-wa transition hover:border-wa hover:bg-wa/10 ${
                   pending ? "pointer-events-none opacity-70" : ""
                 }`}
               >
                 <WhatsAppIcon className="h-5 w-5" />
-                {pending ? "Registrando pedido…" : "Pedir por WhatsApp"}
+                {pending ? "Registrando pedido…" : "Pedir directo por WhatsApp"}
               </a>
               <p className="mt-2 text-center text-xs text-zinc-500">
-                Se abre WhatsApp con tu pedido listo para enviar. Te confirmamos disponibilidad y entrega.
+                {signedIn === false
+                  ? "Para pagar necesitas tu cuenta: tu carrito se guarda mientras ingresas."
+                  : "Paga con tarjeta o envíanos el pedido tal cual por WhatsApp."}
               </p>
 
               <button

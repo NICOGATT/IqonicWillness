@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthSwitchLink } from "@/components/auth/AuthSwitchLink";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 
 export const metadata = { title: "Crear cuenta · IQONIC WELLNESS" };
@@ -13,11 +15,16 @@ export default function SignUpPage() {
       footer={
         <>
           ¿Ya tienes cuenta?{" "}
-          <Link href="/ingresar" className="font-semibold text-white hover:underline">Ingresa</Link>
+          <Suspense fallback={<Link href="/ingresar" className="font-semibold text-white hover:underline">Ingresa</Link>}>
+            <AuthSwitchLink href="/ingresar">Ingresa</AuthSwitchLink>
+          </Suspense>
         </>
       }
     >
-      <SignUpForm />
+      {/* El formulario lee ?next= de la URL: va dentro de Suspense */}
+      <Suspense>
+        <SignUpForm />
+      </Suspense>
     </AuthShell>
   );
 }

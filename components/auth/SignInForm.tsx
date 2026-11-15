@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import { signInCustomer } from "@/app/auth/actions";
 import { fieldProps, FormMessage, PasswordInput, SubmitButton } from "@/components/auth/AuthUI";
+import { CheckoutNotice } from "@/components/auth/CheckoutNotice";
 import { useFormAction } from "@/components/auth/useFormAction";
 import { Field, inputClass } from "@/components/ui/fields";
 
@@ -23,6 +24,7 @@ export function SignInForm() {
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <input type="hidden" name="next" value={next} />
       {state.status === "idle" && linkError && <FormMessage status="error" message={linkError} />}
+      {state.status === "idle" && !linkError && next === "/pago" && <CheckoutNotice />}
       <FormMessage status={state.status} message={state.message} />
 
       <Field label="Correo" htmlFor="email" error={errors.email}>

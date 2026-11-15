@@ -1,11 +1,15 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
 import { signUpCustomer } from "@/app/auth/actions";
+import { CheckoutNotice } from "@/components/auth/CheckoutNotice";
 import { fieldProps, FormMessage, PasswordInput, SubmitButton } from "@/components/auth/AuthUI";
 import { useFormAction } from "@/components/auth/useFormAction";
 import { Field, inputClass } from "@/components/ui/fields";
 
 export function SignUpForm() {
+  const next = useSearchParams().get("next") ?? "/cuenta";
   const { state, onSubmit, pending, errors } = useFormAction(signUpCustomer);
 
   // Registro completado: ocultamos el formulario y mostramos el aviso del correo
@@ -26,6 +30,8 @@ export function SignUpForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <input type="hidden" name="next" value={next} />
+      {next === "/pago" && state.status === "idle" && <CheckoutNotice />}
       <FormMessage status={state.status} message={state.message} />
 
       <div className="grid gap-4 sm:grid-cols-2">

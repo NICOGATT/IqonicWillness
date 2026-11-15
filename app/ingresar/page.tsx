@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { AuthShell } from "@/components/auth/AuthShell";
+import { AuthSwitchLink } from "@/components/auth/AuthSwitchLink";
 import { SignInForm } from "@/components/auth/SignInForm";
 
 export const metadata = { title: "Ingresar · IQONIC WELLNESS" };
@@ -14,7 +15,9 @@ export default function SignInPage() {
       footer={
         <>
           ¿No tienes cuenta?{" "}
-          <Link href="/registro" className="font-semibold text-white hover:underline">Regístrate</Link>
+          <Suspense fallback={<Link href="/registro" className="font-semibold text-white hover:underline">Regístrate</Link>}>
+            <AuthSwitchLink href="/registro">Regístrate</AuthSwitchLink>
+          </Suspense>
         </>
       }
     >

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { siteConfig } from "@/config/site";
 import { buildOrderMessage, MAX_QUANTITY } from "@/lib/cart";
+import { checkoutSchema, getCheckoutMessageLines, getCheckoutOrderNote, getPaymentMethod } from "@/lib/checkout";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { CreatedOrder } from "@/types/database";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
@@ -30,6 +31,8 @@ const orderInputSchema = z.object({
     .min(1, "El carrito está vacío")
     .max(30, "Máximo 30 productos distintos por pedido"),
   note: z.string().trim().max(300).optional(),
+  /** Datos de /pago (contacto, entrega, medio de pago). Sin ellos = pedido directo desde el carrito. */
+  checkout: checkoutSchema.optional(),
 });
 
 export type WhatsAppOrderInput = z.input<typeof orderInputSchema>;
@@ -47,13 +50,18 @@ export async function createWhatsAppOrder(input: WhatsAppOrderInput): Promise<Wh
   if (!parsed.success) {
     return { ok: false, reason: "invalid", error: parsed.error.issues[0]?.message ?? "Pedido inválido" };
   }
+  const { checkout, note } = parsed.data;
+  // Stripe / Mercado Pago todavía no están integrados: por aquí solo entran los pedidos por WhatsApp
+  if (checkout && getPaymentMethod(checkout.paymentMethod).flow !== "whatsapp") {
+    return { ok: false, reason: "invalid", error: "Ese medio de pago todavía no está disponible." };
+  }
   if (!isSupabaseConfigured()) return { ok: false, reason: "failed", error: "Supabase no está configurado" };
 
   // Cliente con cookies: si hay sesión, create_order vincula el pedido al cliente
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_order", {
     p_items: parsed.data.items,
-    p_note: parsed.data.note || null,
+    p_note: checkout ? getCheckoutOrderNote(checkout, note) : note || null,
     p_channel: "whatsapp",
     p_currency: siteConfig.currency.toUpperCase(),
   });
@@ -73,7 +81,8 @@ export async function createWhatsAppOrder(input: WhatsAppOrderInput): Promise<Wh
   const order = data as unknown as CreatedOrder;
   const message = buildOrderMessage({
     orderNumber: order.number,
-    contactName: order.contact_name,
+    contactName: order.contact_name ?? checkout?.name.trim() ?? null,
+    details: checkout ? getCheckoutMessageLines(checkout) : undefined,
     lines: order.items.map((i) => ({
       kind: i.kind,
       name: i.name,
@@ -83,7 +92,8 @@ export async function createWhatsAppOrder(input: WhatsAppOrderInput): Promise<Wh
     })),
     total: Number(order.total),
     hasUnpriced: order.has_unpriced_items,
-    note: order.customer_note,
+    // Con checkout, customer_note guarda el resumen para el admin: en el mensaje va solo el comentario
+    note: checkout ? note : order.customer_note,
   });
 
   return { ok: true, orderNumber: order.number, whatsappUrl: buildWhatsAppUrl(message) };
