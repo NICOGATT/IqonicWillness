@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { siteConfig } from "@/config/site";
 import type { ToastTone } from "@/components/ui/Toast";
+import { useSiteOrigin } from "@/lib/use-site-origin";
 
 /** Enlace de la tienda replicada: https://dominio/?ref=juan-perez (lo procesa proxy.ts). */
 export function buildReferralLink(siteUrl: string, slug: string): string {
@@ -46,7 +47,8 @@ export function ShareLinkCard({
   name: string;
   notify: (tone: ToastTone, message: string) => void;
 }) {
-  const link = buildReferralLink(siteUrl, slug);
+  // Dominio de la página abierta (siteUrl solo mientras se hidrata)
+  const link = buildReferralLink(useSiteOrigin(siteUrl), slug);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {

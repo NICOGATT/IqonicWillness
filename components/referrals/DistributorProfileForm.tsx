@@ -18,6 +18,7 @@ import {
   slugify,
   type DistributorProfileField,
 } from "@/lib/validation/referral";
+import { useSiteOrigin } from "@/lib/use-site-origin";
 import { joinWhatsApp, splitWhatsApp } from "@/lib/whatsapp-countries";
 import type { DistribuidorRow } from "@/types/database";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
@@ -60,6 +61,8 @@ export function DistributorProfileForm({
 }) {
   const router = useRouter();
   const { toast, show, dismiss } = useToast();
+  // Dominio de la página abierta: la vista previa coincide con el enlace que se comparte
+  const origin = useSiteOrigin(siteUrl);
 
   const [saved, setSaved] = useState<Profile | null>(initialProfile);
   const [name, setName] = useState(initialProfile?.nombre_mostrar ?? suggestedName ?? "");
@@ -154,7 +157,7 @@ export function DistributorProfileForm({
     }
   }
 
-  const previewLink = buildReferralLink(siteUrl, cleanSlug || "tu-nombre");
+  const previewLink = buildReferralLink(origin, cleanSlug || "tu-nombre");
 
   return (
     <div className="space-y-6">
