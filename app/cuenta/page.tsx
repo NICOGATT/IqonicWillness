@@ -81,14 +81,14 @@ async function AccountContent({ searchParams }: { searchParams: SearchParams }) 
 
       <section className="flex flex-col gap-4 rounded-3xl border border-brand-violet/25 bg-gradient-to-br from-brand-violet/[.12] to-brand-orange/[.06] p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-display text-lg font-bold text-white">Mi tienda · Panel distribuidor</h2>
+          <h2 className="font-display text-lg font-bold text-white">Dashboard de distribuidor</h2>
           <p className="mt-1 text-sm text-zinc-400">Crea tu enlace personal, compártelo y recibe los pedidos en tu WhatsApp.</p>
         </div>
         <Link
-          href="/mi-panel"
+          href="/dashboard"
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-orange to-brand-violet px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-violet/20 transition hover:brightness-110"
         >
-          Ir a mi tienda
+          Ir al dashboard
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>

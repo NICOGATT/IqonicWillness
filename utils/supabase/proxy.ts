@@ -56,8 +56,8 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
-  // --- Área de clientes y panel del distribuidor ---
-  if ((pathname.startsWith("/cuenta") || pathname.startsWith("/mi-panel")) && !isLoggedIn) {
+  // --- Área de clientes y dashboard del distribuidor ---
+  if ((pathname.startsWith("/cuenta") || pathname.startsWith("/dashboard")) && !isLoggedIn) {
     // Tras iniciar sesión vuelve a la página que pidió
     return go(CUSTOMER_LOGIN, { next: pathname + search });
   }

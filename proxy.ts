@@ -23,7 +23,7 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/cuenta/:path*",
-    "/mi-panel/:path*",
+    "/dashboard/:path*",
     "/ingresar",
     "/registro",
     "/recuperar",

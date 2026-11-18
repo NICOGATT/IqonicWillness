@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   deploymentId: process.env.RAILWAY_GIT_COMMIT_SHA || process.env.RAILWAY_DEPLOYMENT_ID || undefined,
   cacheComponents: true,
   partialPrefetching: true,
+  // El panel del distribuidor se mudó a /dashboard: los enlaces viejos siguen funcionando
+  async redirects() {
+    return [{ source: "/mi-panel/:path*", destination: "/dashboard", permanent: true }];
+  },
   turbopack: {
     rules: {
       "*.css": {

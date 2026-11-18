@@ -88,7 +88,7 @@ export function Navbar({
 
         <div className="flex items-center gap-2 lg:gap-4">
           <div className="hidden md:block">
-            <DistributorPanelLink compact className="text-zinc-300" />
+            <DistributorPanelLink />
           </div>
           <div className="hidden md:block">
             <AccountLink className="text-zinc-300" />
@@ -127,7 +127,7 @@ export function Navbar({
               <AccountLink className="w-full rounded-xl px-4 py-3 text-base text-zinc-200 hover:bg-white/5" onNavigate={() => setOpen(false)} />
             </li>
             <li>
-              <DistributorPanelLink className="w-full rounded-xl px-4 py-3 text-base text-zinc-200 hover:bg-white/5" onNavigate={() => setOpen(false)} />
+              <DistributorPanelLink variant="menu" className="w-full rounded-xl px-4 py-3 text-base text-zinc-200 hover:bg-white/5" onNavigate={() => setOpen(false)} />
             </li>
             <li className="pt-2">
               <WhatsAppButton fullWidth>Hablar por WhatsApp</WhatsAppButton>

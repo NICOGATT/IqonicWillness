@@ -4,7 +4,7 @@ import { LocalDate } from "@/components/ui/LocalDate";
 import { siteConfig } from "@/config/site";
 import type { PedidoReferidoEstado, PedidoReferidoRow, ResumenDistribuidor } from "@/types/database";
 
-/** Métricas + historial de pedidos referidos del distribuidor (Server Component). */
+/** Métricas + historial de pedidos referidos del distribuidor (Server Components del /dashboard). */
 
 const ESTADOS: Record<PedidoReferidoEstado, { label: string; className: string }> = {
   pendiente_whatsapp: { label: "Pendiente", className: "border-brand-gold/30 bg-brand-gold/10 text-brand-gold" },
@@ -28,37 +28,78 @@ function summarizeItems(order: PedidoReferidoRow): string {
   return order.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", ") || "—";
 }
 
-export function ReferralOrders({ summary, orders }: { summary: ResumenDistribuidor; orders: PedidoReferidoRow[] }) {
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <MetricCard
-          label="Pedidos generados"
-          value={String(summary.total_pedidos)}
-          detail={`${summary.pedidos_concretados} ${summary.pedidos_concretados === 1 ? "concretado" : "concretados"}`}
-          icon={<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />}
-          accent="text-brand-orange bg-brand-orange/10"
-        />
-        <MetricCard
-          label="Monto acumulado"
-          value={formatMoney(summary.monto_total)}
-          detail={`${formatMoney(summary.monto_concretado)} concretado`}
-          icon={<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />}
-          accent="text-brand-violet-light bg-brand-violet/10"
-        />
-      </div>
+/** Tarjetas de métricas del distribuidor (Resumen del dashboard). */
+export function ReferralMetrics({ summary }: { summary: ResumenDistribuidor }) {
+  const pendientes = summary.por_estado.pendiente_whatsapp ?? 0;
+  const conversion = summary.total_pedidos > 0 ? Math.round((summary.pedidos_concretados / summary.total_pedidos) * 100) : 0;
 
-      <section aria-labelledby="orders-title" className="rounded-3xl border border-white/[.08] bg-white/[.02]">
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <MetricCard
+        label="Pedidos generados"
+        value={String(summary.total_pedidos)}
+        detail={`${pendientes} ${pendientes === 1 ? "pendiente" : "pendientes"} de confirmar`}
+        icon={<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />}
+        accent="text-brand-orange bg-brand-orange/10"
+      />
+      <MetricCard
+        label="Concretados"
+        value={String(summary.pedidos_concretados)}
+        detail={`${conversion}% de los pedidos`}
+        icon={<path d="M20 6L9 17l-5-5" />}
+        accent="text-wa bg-wa/10"
+      />
+      <MetricCard
+        label="Monto acumulado"
+        value={formatMoney(summary.monto_total)}
+        detail="Sin cancelados ni reembolsados"
+        icon={<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />}
+        accent="text-brand-violet-light bg-brand-violet/10"
+      />
+      <MetricCard
+        label="Monto concretado"
+        value={formatMoney(summary.monto_concretado)}
+        detail="Pagado, enviado o entregado"
+        icon={<path d="M3 3v18h18M7 15l4-4 3 3 5-6" />}
+        accent="text-brand-gold bg-brand-gold/10"
+      />
+    </div>
+  );
+}
+
+/**
+ * Historial de pedidos referidos (tabla en escritorio, tarjetas en móvil).
+ * `total` = cantidad real en la BD, para avisar cuando la lista está recortada.
+ */
+export function ReferralOrdersTable({
+  orders,
+  total,
+  title = "Pedidos de tu tienda",
+  description = "Los que entraron con tu enlace. El estado lo actualiza el equipo.",
+  action,
+}: {
+  orders: PedidoReferidoRow[];
+  total: number;
+  title?: string;
+  description?: string;
+  /** Enlace en la cabecera (p. ej. "Ver todos →"). */
+  action?: ReactNode;
+}) {
+  return (
+    <section aria-labelledby="orders-title" className="rounded-3xl border border-white/[.08] bg-white/[.02]">
         <header className="flex flex-wrap items-end justify-between gap-2 border-b border-white/[.06] px-6 py-5 sm:px-8">
           <div>
             <h2 id="orders-title" className="font-display text-lg font-bold text-white">
-              Pedidos de tu tienda
+              {title}
             </h2>
-            <p className="mt-1 text-sm text-zinc-500">Los que entraron con tu enlace. El estado lo actualiza el equipo.</p>
+            <p className="mt-1 text-sm text-zinc-500">{description}</p>
           </div>
-          {summary.total_pedidos > orders.length && (
-            <p className="text-xs text-zinc-600">Últimos {orders.length} de {summary.total_pedidos}</p>
-          )}
+          {action ??
+            (total > orders.length && (
+              <p className="text-xs text-zinc-600">
+                Últimos {orders.length} de {total}
+              </p>
+            ))}
         </header>
 
         {orders.length === 0 ? (
@@ -129,8 +170,7 @@ export function ReferralOrders({ summary, orders }: { summary: ResumenDistribuid
             </ul>
           </>
         )}
-      </section>
-    </div>
+    </section>
   );
 }
 

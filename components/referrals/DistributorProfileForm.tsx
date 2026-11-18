@@ -145,7 +145,7 @@ export function DistributorProfileForm({
         setErrors(result.fieldErrors ?? {});
         if (result.reason === "slug-taken") setSlugStatus("taken");
         show("error", result.error);
-        if (result.reason === "unauthenticated") router.push("/ingresar?next=/mi-panel");
+        if (result.reason === "unauthenticated") router.push("/ingresar?next=/dashboard/tienda");
       }
     } catch {
       show("error", "No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.");
