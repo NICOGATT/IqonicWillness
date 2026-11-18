@@ -1,12 +1,14 @@
 import { z } from "zod";
 
+import { MAX_QUANTITY } from "@/lib/cart";
+
 /**
  * Checkout: medios de pago, formas de entrega y datos de contacto.
  * Lógica pura (sin React): la usan el formulario de /pago y la Server Action.
  *
  * Dos opciones:
- * - Tarjeta de crédito o débito (formulario con vista previa). El cobro real
- *   se activa con NEXT_PUBLIC_PAY_CARD=true cuando Stripe esté conectado.
+ * - Tarjeta de crédito o débito: Stripe Elements con vista previa. Se activa
+ *   cuando hay NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (y STRIPE_SECRET_KEY en el servidor).
  * - Pedir por WhatsApp: el pedido se registra y el pago se coordina por chat.
  */
 
@@ -34,7 +36,7 @@ export const PAYMENT_METHODS: readonly PaymentMethod[] = [
     description: "Visa, Mastercard y American Express.",
     flow: "online",
     summary: "Tarjeta de crédito o débito",
-    live: process.env.NEXT_PUBLIC_PAY_CARD === "true",
+    live: Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
     nextStep: "El pago se procesa de forma segura y te enviamos el comprobante por email.",
   },
   {
@@ -90,6 +92,25 @@ export const checkoutSchema = z
   });
 
 export type CheckoutData = z.input<typeof checkoutSchema>;
+
+/** Pedido que manda /pago o el carrito a las Server Actions. */
+export const orderRequestSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        kind: z.enum(["product", "package"]),
+        id: z.uuid(),
+        quantity: z.number().int().min(1).max(MAX_QUANTITY),
+      }),
+    )
+    .min(1, "El carrito está vacío")
+    .max(30, "Máximo 30 productos distintos por pedido"),
+  note: z.string().trim().max(300).optional(),
+  /** Datos de /pago (contacto, entrega, medio de pago). Sin ellos = pedido directo desde el carrito. */
+  checkout: checkoutSchema.optional(),
+});
+
+export type OrderRequest = z.input<typeof orderRequestSchema>;
 export type CheckoutField = "name" | "phone" | "email" | "address" | "city";
 
 /** Errores por campo para mostrar debajo de cada input. */

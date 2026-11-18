@@ -3,14 +3,21 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
-import { createWhatsAppOrder } from "@/app/pedidos/actions";
+import { createReferralOrderAndGetWhatsAppUrl } from "@/app/referidos/actions";
 import { CartIcon } from "@/components/icons/CartIcon";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { Spinner } from "@/components/ui/fields";
+import { setBuyer, useBuyer } from "@/lib/buyer-store";
 import { getCartMessage, getCartTotals, getItemCount, MAX_QUANTITY, type CartItem } from "@/lib/cart";
 import { clearCart, removeFromCart, setCartOpen, setQuantity, useCartItems, useCartOpen } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
+import { useActiveReferral } from "@/lib/use-active-referral";
 import { useSignedIn } from "@/lib/use-signed-in";
+import { normalizeWhatsApp } from "@/lib/validation/referral";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+
+const buyerInputClass =
+  "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-white/30 focus:outline-none aria-[invalid=true]:border-red-500/60";
 
 /**
  * Panel lateral del carrito (<dialog> nativo: atrapa el foco y cierra con Esc).
@@ -24,6 +31,10 @@ export function CartDrawer() {
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const buyer = useBuyer();
+  const [buyerErrors, setBuyerErrors] = useState<{ nombre?: string; telefono?: string }>({});
+  // Distribuidor del enlace (cookie iqonic_ref): a quién le llega el pedido
+  const referral = useActiveReferral();
   // Pedido recién registrado: se muestra la confirmación en lugar del carrito vacío
   const [placed, setPlaced] = useState<{ orderNumber: number; whatsappUrl: string } | null>(null);
 
@@ -41,25 +52,43 @@ export function CartDrawer() {
   const count = getItemCount(items);
   const { total, hasUnpriced } = getCartTotals(items);
   // Respaldo: mensaje armado en el navegador (si falla Supabase o sin JavaScript)
-  const fallbackUrl = buildWhatsAppUrl(getCartMessage(items, note));
+  const buyerName = buyer.nombre.trim();
+  const fallbackMessage = getCartMessage(items, note, { contactName: buyerName || null });
+  const fallbackUrl = buildWhatsAppUrl(fallbackMessage);
+
+  /** Nombre obligatorio y teléfono opcional (mismas reglas que referralOrderSchema). */
+  function validateBuyer(): boolean {
+    const errors: typeof buyerErrors = {};
+    if (buyerName.length < 2) errors.nombre = "Escribe tu nombre para enviar el pedido.";
+    const phone = buyer.telefono.trim();
+    if (phone && !/^[0-9]{7,15}$/.test(normalizeWhatsApp(phone))) errors.telefono = "Teléfono inválido.";
+    setBuyerErrors(errors);
+    const firstInvalid = errors.nombre ? "buyer-name" : errors.telefono ? "buyer-phone" : null;
+    if (firstInvalid) document.getElementById(firstInvalid)?.focus();
+    return !firstInvalid;
+  }
 
   /**
    * 1. Abre la pestaña YA (dentro del clic) para que el navegador no la bloquee.
-   * 2. Registra el pedido en Supabase y obtiene el mensaje con el número (#1042).
-   * 3. Lleva esa pestaña a WhatsApp.
+   * 2. Registra el pedido en Supabase (atribuido al distribuidor de la cookie
+   *    iqonic_ref) y obtiene el mensaje con el número (#1042).
+   * 3. Lleva esa pestaña al WhatsApp del distribuidor o de la tienda.
    */
   async function placeOrder(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     if (pending) return;
     setError(null);
+    // Antes de abrir la pestaña: sin nombre no sale el pedido
+    if (!validateBuyer()) return;
     setPending(true);
     const tab = window.open("", "_blank");
 
     let url: string | null = fallbackUrl;
     try {
-      const result = await createWhatsAppOrder({
+      const result = await createReferralOrderAndGetWhatsAppUrl({
         items: items.map((i) => ({ kind: i.kind, id: i.id, quantity: i.quantity })),
         note,
+        cliente: { nombre: buyerName, telefono: buyer.telefono.trim() || undefined },
       });
       if (result.ok) {
         url = result.whatsappUrl;
@@ -71,6 +100,8 @@ export function CartDrawer() {
         setError(result.error);
       } else {
         console.warn("[carrito] Pedido no registrado, se envía igual por WhatsApp:", result.error);
+        // Mismo destinatario que el pedido registrado: el distribuidor del enlace, si lo hay
+        url = buildWhatsAppUrl(fallbackMessage, result.fallbackPhone);
       }
     } catch (err) {
       console.warn("[carrito] Pedido no registrado, se envía igual por WhatsApp:", err);
@@ -179,7 +210,57 @@ export function CartDrawer() {
             </ul>
 
             <footer className="border-t border-white/[.07] px-5 py-5 sm:px-6">
-              <label htmlFor="cart-note" className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label htmlFor="buyer-name" className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Tu nombre <span className="text-brand-orange">*</span>
+                  </label>
+                  <input
+                    id="buyer-name"
+                    value={buyer.nombre}
+                    onChange={(e) => {
+                      setBuyer({ nombre: e.target.value });
+                      setBuyerErrors((errs) => ({ ...errs, nombre: undefined }));
+                    }}
+                    maxLength={120}
+                    autoComplete="name"
+                    placeholder="Nombre y apellido"
+                    required
+                    aria-invalid={Boolean(buyerErrors.nombre)}
+                    aria-describedby={buyerErrors.nombre ? "buyer-name-error" : undefined}
+                    className={buyerInputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="buyer-phone" className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    Teléfono <span className="font-normal normal-case tracking-normal">(opcional)</span>
+                  </label>
+                  <input
+                    id="buyer-phone"
+                    value={buyer.telefono}
+                    onChange={(e) => {
+                      setBuyer({ telefono: e.target.value });
+                      setBuyerErrors((errs) => ({ ...errs, telefono: undefined }));
+                    }}
+                    type="tel"
+                    inputMode="tel"
+                    maxLength={30}
+                    autoComplete="tel"
+                    placeholder="+54 9 11…"
+                    aria-invalid={Boolean(buyerErrors.telefono)}
+                    aria-describedby={buyerErrors.telefono ? "buyer-phone-error" : undefined}
+                    className={buyerInputClass}
+                  />
+                </div>
+                {(buyerErrors.nombre || buyerErrors.telefono) && (
+                  <p role="alert" className="col-span-2 -mt-1 text-xs text-red-400">
+                    <span id="buyer-name-error">{buyerErrors.nombre}</span>{" "}
+                    <span id="buyer-phone-error">{buyerErrors.telefono}</span>
+                  </p>
+                )}
+              </div>
+
+              <label htmlFor="cart-note" className="mt-3 block text-xs font-semibold uppercase tracking-wider text-zinc-500">
                 Comentario (opcional)
               </label>
               <textarea
@@ -227,13 +308,19 @@ export function CartDrawer() {
                   pending ? "pointer-events-none opacity-70" : ""
                 }`}
               >
-                <WhatsAppIcon className="h-5 w-5" />
-                {pending ? "Registrando pedido…" : "Pedir directo por WhatsApp"}
+                {pending ? <Spinner /> : <WhatsAppIcon className="h-5 w-5" />}
+                {pending ? "Registrando pedido…" : "Finalizar pedido por WhatsApp"}
               </a>
               <p className="mt-2 text-center text-xs text-zinc-500">
-                {signedIn === false
-                  ? "Para pagar necesitas tu cuenta: tu carrito se guarda mientras ingresas."
-                  : "Paga con tarjeta o envíanos el pedido tal cual por WhatsApp."}
+                {referral ? (
+                  <>
+                    Tu pedido por WhatsApp lo atiende <span className="font-semibold text-zinc-300">{referral.nombre_mostrar}</span>.
+                  </>
+                ) : signedIn === false ? (
+                  "Para pagar necesitas tu cuenta: tu carrito se guarda mientras ingresas."
+                ) : (
+                  "Paga con tarjeta o envíanos el pedido tal cual por WhatsApp."
+                )}
               </p>
 
               <button

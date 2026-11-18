@@ -7,26 +7,36 @@ import type { PaymentMethod } from "@/lib/checkout";
 interface CheckoutSuccessProps {
   /** null = no se pudo registrar en Supabase, pero el mensaje salió igual. */
   orderNumber: number | null;
+  /** Pedido por WhatsApp: el chat con el pedido · Tarjeta: chat para coordinar la entrega. */
   whatsappUrl: string;
   method: PaymentMethod;
+  /** true = cobrado con tarjeta. */
+  paid?: boolean;
 }
 
-/** Confirmación tras enviar el pedido por WhatsApp. */
-export function CheckoutSuccess({ orderNumber, whatsappUrl, method }: CheckoutSuccessProps) {
-  const steps = [
-    "Envía el mensaje que se abrió en WhatsApp: así confirmamos tu pedido.",
-    method.nextStep,
-    "Te avisamos cuando tu pedido esté en camino.",
-  ];
+/** Confirmación tras pagar con tarjeta o enviar el pedido por WhatsApp. */
+export function CheckoutSuccess({ orderNumber, whatsappUrl, method, paid = false }: CheckoutSuccessProps) {
+  const steps = paid
+    ? [
+        "Recibimos tu pago. El comprobante llega a tu email.",
+        "Te escribimos por WhatsApp para coordinar la entrega.",
+        "Te avisamos cuando tu pedido esté en camino.",
+      ]
+    : [
+        "Envía el mensaje que se abrió en WhatsApp: así confirmamos tu pedido.",
+        method.nextStep,
+        "Te avisamos cuando tu pedido esté en camino.",
+      ];
+
+  const title = paid ? "¡Pago aprobado!" : orderNumber ? `Pedido #${orderNumber} registrado` : "¡Ya casi está!";
 
   return (
     <div className="mx-auto max-w-lg text-center">
       <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-wa/15 text-wa">
         <CheckIcon className="h-8 w-8" />
       </span>
-      <h1 className="mt-6 font-display text-3xl font-bold text-white">
-        {orderNumber ? `Pedido #${orderNumber} registrado` : "¡Ya casi está!"}
-      </h1>
+      <h1 className="mt-6 font-display text-3xl font-bold text-white">{title}</h1>
+      {paid && orderNumber ? <p className="mt-2 text-lg font-semibold text-zinc-300">Pedido #{orderNumber}</p> : null}
       <p className="mt-3 inline-flex items-center gap-1.5 text-zinc-400">
         <PaymentIcon id={method.id} className="h-4 w-4" />
         Forma de pago: <span className="font-semibold text-white">{method.summary.toLowerCase()}</span>
@@ -51,7 +61,7 @@ export function CheckoutSuccess({ orderNumber, whatsappUrl, method }: CheckoutSu
           className="btn-wa inline-flex items-center justify-center gap-2.5 rounded-2xl px-5 py-3.5 text-sm font-bold text-ink-950"
         >
           <WhatsAppIcon className="h-5 w-5" />
-          ¿No se abrió? Abrir WhatsApp
+          {paid ? "Coordinar la entrega" : "¿No se abrió? Abrir WhatsApp"}
         </a>
         <Link
           href="/#productos"

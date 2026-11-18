@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { CartButton } from "@/components/cart/CartButton";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { AccountLink } from "@/components/layout/AccountLink";
+import { DistributorPanelLink } from "@/components/referrals/DistributorPanelLink";
+import { ReferralBanner } from "@/components/referrals/ReferralBanner";
 import { Logo } from "@/components/ui/Logo";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { siteConfig } from "@/config/site";
@@ -86,6 +88,9 @@ export function Navbar({
 
         <div className="flex items-center gap-2 lg:gap-4">
           <div className="hidden md:block">
+            <DistributorPanelLink compact className="text-zinc-300" />
+          </div>
+          <div className="hidden md:block">
             <AccountLink className="text-zinc-300" />
           </div>
           <div className="hidden sm:block">
@@ -121,12 +126,18 @@ export function Navbar({
             <li>
               <AccountLink className="w-full rounded-xl px-4 py-3 text-base text-zinc-200 hover:bg-white/5" onNavigate={() => setOpen(false)} />
             </li>
+            <li>
+              <DistributorPanelLink className="w-full rounded-xl px-4 py-3 text-base text-zinc-200 hover:bg-white/5" onNavigate={() => setOpen(false)} />
+            </li>
             <li className="pt-2">
               <WhatsAppButton fullWidth>Hablar por WhatsApp</WhatsAppButton>
             </li>
           </ul>
         </div>
       )}
+
+      {/* "Estás comprando en la tienda de …" (solo si llegó por un enlace de distribuidor) */}
+      <ReferralBanner />
 
       {/* Panel del carrito (se abre desde CartButton o al agregar un producto) */}
       <CartDrawer />

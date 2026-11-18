@@ -186,9 +186,97 @@ export type CreatedOrder = Pick<
   items: Pick<OrderItemRow, "kind" | "name" | "detail" | "unit_price" | "quantity" | "line_total">[];
 };
 
+/* ------------------------ Referidos (0005) ------------------------ */
+
+/** Perfil del distribuidor (tienda replicada). */
+export type DistribuidorRow = {
+  id: string;
+  user_id: string;
+  /** Minúsculas, números y guiones: "juan-perez". */
+  slug: string;
+  nombre_mostrar: string;
+  /** Solo dígitos con código de país: "5491123456789". */
+  whatsapp: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Lo que un visitante anónimo puede leer de un distribuidor activo. */
+export type DistribuidorPublico = Pick<DistribuidorRow, "id" | "slug" | "nombre_mostrar" | "whatsapp">;
+
+export const PEDIDO_REFERIDO_ESTADOS = [
+  "pendiente_whatsapp",
+  "confirmado",
+  "pagado",
+  "enviado",
+  "entregado",
+  "cancelado",
+  "reembolsado",
+] as const;
+export type PedidoReferidoEstado = (typeof PEDIDO_REFERIDO_ESTADOS)[number];
+
+/** Elemento de `pedidos_referidos.items` (copia de order_items). */
+export type PedidoReferidoItem = {
+  /** product_id o package_id; null si el producto se borró. */
+  id: string | null;
+  tipo: "product" | "package";
+  nombre: string;
+  detalle: string | null;
+  cantidad: number;
+  /** null = precio a consultar. */
+  precio_unitario: number | null;
+};
+
+export type PedidoReferidoRow = {
+  id: string;
+  /** null = venta directa de la tienda principal. */
+  distribuidor_id: string | null;
+  order_id: string | null;
+  cliente_nombre: string | null;
+  cliente_telefono: string | null;
+  items: PedidoReferidoItem[];
+  total: number;
+  moneda: string;
+  tiene_items_sin_precio: boolean;
+  estado: PedidoReferidoEstado;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Lo que devuelve create_referral_order(). */
+export type CreatedReferralOrder = CreatedOrder & {
+  pedido_referido_id: string;
+  distribuidor: DistribuidorPublico | null;
+};
+
+/** Lo que devuelve resumen_distribuidor(). */
+export type ResumenDistribuidor = {
+  total_pedidos: number;
+  pedidos_concretados: number;
+  monto_total: number;
+  monto_concretado: number;
+  ultimo_pedido_at: string | null;
+  por_estado: Partial<Record<PedidoReferidoEstado, number>>;
+};
+
 export type Database = {
   public: {
     Tables: {
+      distribuidores: {
+        Row: DistribuidorRow;
+        Insert: Pick<DistribuidorRow, "user_id" | "slug" | "nombre_mostrar" | "whatsapp">;
+        // El dueño cambia slug, nombre y WhatsApp; "activo" solo un admin (trigger)
+        Update: Partial<Pick<DistribuidorRow, "slug" | "nombre_mostrar" | "whatsapp" | "activo">>;
+        Relationships: [];
+      };
+      pedidos_referidos: {
+        Row: PedidoReferidoRow;
+        // Se crean con create_referral_order(); el estado lo sincroniza orders
+        Insert: never;
+        Update: Partial<Pick<PedidoReferidoRow, "estado">>;
+        Relationships: [];
+      };
       products: {
         Row: ProductRow;
         Insert: ProductInsert;
@@ -256,6 +344,22 @@ export type Database = {
         Args: { p_items: Json; p_note?: string | null; p_channel?: "whatsapp" | "stripe"; p_currency?: string };
         Returns: Json;
       };
+      /** create_order() + atribución al distribuidor. Devuelve CreatedReferralOrder (jsonb). */
+      create_referral_order: {
+        Args: {
+          p_items: Json;
+          p_ref_slug?: string | null;
+          p_cliente_nombre?: string | null;
+          p_cliente_telefono?: string | null;
+          p_note?: string | null;
+          p_currency?: string;
+        };
+        Returns: Json;
+      };
+      /** true si el slug está libre (o ya es del usuario actual). */
+      slug_disponible: { Args: { p_slug: string }; Returns: boolean };
+      /** Métricas del distribuidor autenticado. Devuelve ResumenDistribuidor (jsonb). */
+      resumen_distribuidor: { Args: Record<string, never>; Returns: Json };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

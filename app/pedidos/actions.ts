@@ -1,10 +1,14 @@
 "use server";
 
-import { z } from "zod";
-
 import { siteConfig } from "@/config/site";
-import { buildOrderMessage, MAX_QUANTITY } from "@/lib/cart";
-import { checkoutSchema, getCheckoutMessageLines, getCheckoutOrderNote, getPaymentMethod } from "@/lib/checkout";
+import { buildOrderMessage } from "@/lib/cart";
+import {
+  getCheckoutMessageLines,
+  getCheckoutOrderNote,
+  getPaymentMethod,
+  orderRequestSchema,
+  type OrderRequest,
+} from "@/lib/checkout";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { CreatedOrder } from "@/types/database";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
@@ -19,23 +23,7 @@ import { createClient } from "@/utils/supabase/server";
  * Si algo falla, el carrito usa su propio mensaje para no perder la venta.
  */
 
-const orderInputSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        kind: z.enum(["product", "package"]),
-        id: z.uuid(),
-        quantity: z.number().int().min(1).max(MAX_QUANTITY),
-      }),
-    )
-    .min(1, "El carrito está vacío")
-    .max(30, "Máximo 30 productos distintos por pedido"),
-  note: z.string().trim().max(300).optional(),
-  /** Datos de /pago (contacto, entrega, medio de pago). Sin ellos = pedido directo desde el carrito. */
-  checkout: checkoutSchema.optional(),
-});
-
-export type WhatsAppOrderInput = z.input<typeof orderInputSchema>;
+export type WhatsAppOrderInput = OrderRequest;
 
 export type WhatsAppOrderResult =
   | { ok: true; orderNumber: number; whatsappUrl: string }
@@ -46,12 +34,12 @@ export type WhatsAppOrderResult =
   | { ok: false; reason: "invalid" | "unavailable" | "failed"; error: string };
 
 export async function createWhatsAppOrder(input: WhatsAppOrderInput): Promise<WhatsAppOrderResult> {
-  const parsed = orderInputSchema.safeParse(input);
+  const parsed = orderRequestSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, reason: "invalid", error: parsed.error.issues[0]?.message ?? "Pedido inválido" };
   }
   const { checkout, note } = parsed.data;
-  // Stripe / Mercado Pago todavía no están integrados: por aquí solo entran los pedidos por WhatsApp
+  // La tarjeta va por startCardPayment (app/pago/actions.ts): por aquí solo entran los pedidos por WhatsApp
   if (checkout && getPaymentMethod(checkout.paymentMethod).flow !== "whatsapp") {
     return { ok: false, reason: "invalid", error: "Ese medio de pago todavía no está disponible." };
   }

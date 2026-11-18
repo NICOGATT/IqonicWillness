@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-import { BRAND_LABEL, cvcLength, detectBrand, previewCardNumber, type CardBrand, type CardFields } from "@/lib/card";
+import { BRAND_LABEL, cvcLength, maskedCardGroups, type CardBrand } from "@/lib/card";
 
 /** Cara de la tarjeta: oculta cuando queda de espaldas al girar. */
 const FACE: CSSProperties = { backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" };
@@ -12,17 +12,26 @@ const BRAND_BG: Record<CardBrand, string> = {
   unknown: "linear-gradient(135deg, #1c1c25 0%, #3a2466 55%, #9d5cff 100%)",
 };
 
+interface CardPreviewProps {
+  brand: CardBrand;
+  holder: string;
+  /** Cada campo de Stripe avisa si está completo (nunca su contenido). */
+  numberComplete: boolean;
+  expiryComplete: boolean;
+  cvcComplete: boolean;
+  flipped: boolean;
+}
+
 /**
- * Tarjeta dibujada que refleja lo que se escribe en el formulario.
- * Se da vuelta mientras se completa el código de seguridad.
+ * Tarjeta dibujada que acompaña al formulario.
+ * Los campos son de Stripe (iframes): sabemos la marca y si cada campo está
+ * completo, nunca los números. El titular sí es un campo nuestro.
  * Solo es visual: aria-hidden, los lectores de pantalla leen los campos.
  */
-export function CardPreview({ card, flipped }: { card: CardFields; flipped: boolean }) {
-  const brand = detectBrand(card.number);
-  const numberGroups = previewCardNumber(card.number);
-  const holder = card.holder.trim().toUpperCase() || "NOMBRE Y APELLIDO";
-  const expiry = card.expiry || "MM/AA";
-  const cvc = card.cvc.padEnd(cvcLength(brand), "•");
+export function CardPreview({ brand, holder, numberComplete, expiryComplete, cvcComplete, flipped }: CardPreviewProps) {
+  const name = holder.trim().toUpperCase() || "NOMBRE Y APELLIDO";
+  const done = "text-white";
+  const empty = "text-white/45";
 
   return (
     <div className="mx-auto w-full max-w-[22rem]" style={{ perspective: "1200px" }} aria-hidden="true">
@@ -41,22 +50,24 @@ export function CardPreview({ card, flipped }: { card: CardFields; flipped: bool
             <BrandMark brand={brand} />
           </div>
 
-          <p className="relative flex justify-between gap-2 font-mono text-[clamp(1rem,5vw,1.35rem)] tracking-[0.12em] tabular-nums drop-shadow">
-            {numberGroups.map((group, i) => (
-              <span key={i} className="whitespace-pre">
-                {group}
-              </span>
+          <p
+            className={`relative flex justify-between gap-2 font-mono text-[clamp(1rem,5vw,1.35rem)] tracking-[0.12em] drop-shadow transition-colors ${numberComplete ? done : empty}`}
+          >
+            {maskedCardGroups(brand).map((group, i) => (
+              <span key={i}>{group}</span>
             ))}
           </p>
 
           <div className="relative flex items-end justify-between gap-4 text-[11px]">
             <div className="min-w-0">
               <p className="uppercase tracking-wider text-white/55">Titular</p>
-              <p className="mt-0.5 truncate font-semibold tracking-wider">{holder}</p>
+              <p className="mt-0.5 truncate font-semibold tracking-wider">{name}</p>
             </div>
             <div className="shrink-0 text-right">
               <p className="uppercase tracking-wider text-white/55">Vence</p>
-              <p className="mt-0.5 font-mono font-semibold tracking-wider">{expiry}</p>
+              <p className={`mt-0.5 font-mono font-semibold tracking-wider ${expiryComplete ? done : empty}`}>
+                {expiryComplete ? "••/••" : "MM/AA"}
+              </p>
             </div>
           </div>
         </div>
@@ -69,7 +80,11 @@ export function CardPreview({ card, flipped }: { card: CardFields; flipped: bool
           <div className="h-11 w-full bg-black/80" />
           <div className="mt-5 flex items-center gap-3 px-5">
             <div className="h-9 flex-1 rounded-md bg-[repeating-linear-gradient(-45deg,#f4f4f5_0_6px,#e4e4e7_6px_12px)]" />
-            <div className="rounded-md bg-white px-3 py-1.5 font-mono text-sm font-bold tracking-widest text-ink-950">{cvc}</div>
+            <div
+              className={`rounded-md bg-white px-3 py-1.5 font-mono text-sm font-bold tracking-widest ${cvcComplete ? "text-ink-950" : "text-zinc-400"}`}
+            >
+              {"•".repeat(cvcLength(brand))}
+            </div>
           </div>
           <p className="mt-2 px-5 text-right text-[10px] uppercase tracking-wider text-white/60">Código de seguridad</p>
           <div className="mt-auto flex justify-end p-5">
