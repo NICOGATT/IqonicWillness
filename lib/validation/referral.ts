@@ -22,6 +22,20 @@ export const WHATSAPP_REGEX = /^[0-9]{8,15}$/;
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "admin",
   "api",
+  // Rutas del sitio: /<slug> también es un enlace de referido (app/[ref]/route.ts)
+  // y una ruta real siempre le gana, así que el enlace nunca funcionaría.
+  "auth",
+  "cuenta",
+  "dashboard",
+  "ingresar",
+  "mi-panel",
+  "pago",
+  "pedidos",
+  "productos",
+  "r",
+  "recuperar",
+  "referidos",
+  "registro",
   "iqonic",
   "iqonic-wellness",
   "iqonicwellness",

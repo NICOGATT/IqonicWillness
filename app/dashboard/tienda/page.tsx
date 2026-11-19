@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { SetupNotice } from "@/components/admin/SetupNotice";
-import { ErrorNotice, PageHeader } from "@/components/dashboard/PanelParts";
+import { ErrorNotice, NotDistributorNotice, PageHeader } from "@/components/dashboard/PanelParts";
 import { DistributorProfileForm } from "@/components/referrals/DistributorProfileForm";
 import { siteConfig } from "@/config/site";
 import { getCustomerSession } from "@/lib/customer";
@@ -15,6 +15,14 @@ export default async function DashboardStorePage() {
   if (stats.status === "unconfigured") return <SetupNotice />;
   if (stats.status === "anonymous") redirect("/ingresar?next=/dashboard/tienda");
   if (stats.status === "error") return <ErrorNotice message={stats.error} />;
+  if (stats.status === "not-distributor") {
+    return (
+      <>
+        <PageHeader eyebrow="Mi tienda" title="Mi tienda" />
+        <NotDistributorNotice />
+      </>
+    );
+  }
 
   const profile = stats.status === "ok" ? stats.profile : null;
 

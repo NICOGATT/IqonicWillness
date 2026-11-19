@@ -77,32 +77,31 @@ export async function checkIqonicIdAvailability(value: string): Promise<IqonicId
 }
 
 const SIGN_UP_FIELDS = [
-  "first_name",
-  "last_name",
-  "phone",
-  "birth_date",
+  "full_name",
   "email",
   "password",
   "password_confirm",
   "role",
   "iqonic_id",
   "whatsapp",
+  "referred_by_iqonic_id",
   "next",
 ];
 
 export async function signUpCustomer(_prev: FormState, formData: FormData): Promise<FormState> {
   const raw = formToObject(formData, SIGN_UP_FIELDS);
-  // Adónde volver al terminar (p. ej. /pago si venía del checkout); solo rutas internas
-  const next = safeNextPath(raw.next);
-  delete raw.next;
   const values = withoutPasswords(raw);
+  delete values.next;
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
     return { status: "error", message: "Revisa los campos marcados.", fieldErrors: toFieldErrors(parsed.error), values };
   }
 
-  const { email, password, first_name, last_name, phone, birth_date, role, iqonic_id, whatsapp } = parsed.data;
+  const { email, password, full_name, first_name, last_name, role, iqonic_id, whatsapp } = parsed.data;
   const isDistributor = role === "distributor";
+  // Adónde volver al terminar (p. ej. /pago si venía del checkout); solo rutas internas.
+  // Un distribuidor sin destino explícito va directo a su panel.
+  const next = safeNextPath(raw.next, isDistributor ? "/dashboard" : "/cuenta");
   const supabase = await createClient();
 
   // Distribuidor: el iqonic_id tiene que estar libre. Si la verificación falla
@@ -120,9 +119,9 @@ export async function signUpCustomer(_prev: FormState, formData: FormData): Prom
     }
   }
 
-  // Patrocinador: cookie de referido → distribuidor por defecto → null (orgánico).
-  // Se guarda para clientes Y distribuidores (el patrocinador de un distribuidor).
-  const referredBy = await resolveReferrerIqonicId();
+  // Patrocinador: cookies de referido → copia del navegador → distribuidor por
+  // defecto → null (orgánico). Se guarda para clientes Y distribuidores.
+  const referredBy = await resolveReferrerIqonicId(parsed.data.referred_by_iqonic_id);
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -133,9 +132,9 @@ export async function signUpCustomer(_prev: FormState, formData: FormData): Prom
       data: {
         first_name,
         last_name,
-        full_name: `${first_name} ${last_name}`,
-        phone,
-        birth_date,
+        full_name,
+        // El WhatsApp también es su teléfono de contacto (precarga el checkout)
+        phone: whatsapp ? `+${whatsapp}` : null,
         role,
         iqonic_id,
         whatsapp,

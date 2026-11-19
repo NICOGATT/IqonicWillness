@@ -28,38 +28,56 @@ function summarizeItems(order: PedidoReferidoRow): string {
   return order.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", ") || "—";
 }
 
-/** Tarjetas de métricas del distribuidor (Resumen del dashboard). */
-export function ReferralMetrics({ summary }: { summary: ResumenDistribuidor }) {
-  const pendientes = summary.por_estado.pendiente_whatsapp ?? 0;
-  const conversion = summary.total_pedidos > 0 ? Math.round((summary.pedidos_concretados / summary.total_pedidos) * 100) : 0;
+/**
+ * Tarjetas de métricas del distribuidor (Resumen del dashboard).
+ * `clients` null = no tiene iqonic_id; `summary` null = no creó su tienda
+ * (sin tienda no hay pedidos atribuidos: se muestra "—" y cómo conseguirlos).
+ */
+export function ReferralMetrics({
+  summary,
+  clients,
+}: {
+  summary: ResumenDistribuidor | null;
+  clients: { total: number; nuevos: number } | null;
+}) {
+  const pendientes = summary?.por_estado.pendiente_whatsapp ?? 0;
+  const conversion =
+    summary && summary.total_pedidos > 0 ? Math.round((summary.pedidos_concretados / summary.total_pedidos) * 100) : 0;
+  const noStore = "Crea tu tienda para recibir pedidos";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <MetricCard
+        label="Clientes registrados"
+        value={clients ? String(clients.total) : "—"}
+        detail={
+          clients
+            ? clients.nuevos > 0
+              ? `${clients.nuevos} ${clients.nuevos === 1 ? "nuevo" : "nuevos"} esta semana`
+              : "Con tu link de invitación"
+            : "Necesitas tu Iqonic ID"
+        }
+        icon={<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />}
+        accent="text-brand-violet-light bg-brand-violet/10"
+      />
+      <MetricCard
         label="Pedidos generados"
-        value={String(summary.total_pedidos)}
-        detail={`${pendientes} ${pendientes === 1 ? "pendiente" : "pendientes"} de confirmar`}
+        value={summary ? String(summary.total_pedidos) : "—"}
+        detail={summary ? `${pendientes} ${pendientes === 1 ? "pendiente" : "pendientes"} de confirmar` : noStore}
         icon={<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />}
         accent="text-brand-orange bg-brand-orange/10"
       />
       <MetricCard
-        label="Concretados"
-        value={String(summary.pedidos_concretados)}
-        detail={`${conversion}% de los pedidos`}
+        label="Compras concretadas"
+        value={summary ? String(summary.pedidos_concretados) : "—"}
+        detail={summary ? `${conversion}% de conversión` : noStore}
         icon={<path d="M20 6L9 17l-5-5" />}
         accent="text-wa bg-wa/10"
       />
       <MetricCard
-        label="Monto acumulado"
-        value={formatMoney(summary.monto_total)}
-        detail="Sin cancelados ni reembolsados"
-        icon={<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />}
-        accent="text-brand-violet-light bg-brand-violet/10"
-      />
-      <MetricCard
         label="Monto concretado"
-        value={formatMoney(summary.monto_concretado)}
-        detail="Pagado, enviado o entregado"
+        value={summary ? formatMoney(summary.monto_concretado) : "—"}
+        detail={summary ? `${formatMoney(summary.monto_total)} en pedidos activos` : noStore}
         icon={<path d="M3 3v18h18M7 15l4-4 3 3 5-6" />}
         accent="text-brand-gold bg-brand-gold/10"
       />

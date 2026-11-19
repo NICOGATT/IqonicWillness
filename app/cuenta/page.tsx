@@ -79,10 +79,12 @@ async function AccountContent({ searchParams }: { searchParams: SearchParams }) 
         </div>
       </section>
 
+      {/* Solo distribuidores (y admins); el panel vuelve a validarlo en el servidor */}
+      {(profile?.role === "distributor" || profile?.role === "admin") && (
       <section className="flex flex-col gap-4 rounded-3xl border border-brand-violet/25 bg-gradient-to-br from-brand-violet/[.12] to-brand-orange/[.06] p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-lg font-bold text-white">Dashboard de distribuidor</h2>
-          <p className="mt-1 text-sm text-zinc-400">Crea tu enlace personal, compártelo y recibe los pedidos en tu WhatsApp.</p>
+          <p className="mt-1 text-sm text-zinc-400">Comparte tu link de invitación y sigue a tus clientes y pedidos.</p>
         </div>
         <Link
           href="/dashboard"
@@ -94,6 +96,7 @@ async function AccountContent({ searchParams }: { searchParams: SearchParams }) 
           </svg>
         </Link>
       </section>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <section className="rounded-3xl border border-white/[.08] bg-white/[.02] p-6">

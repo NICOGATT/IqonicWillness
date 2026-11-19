@@ -22,10 +22,18 @@ export function WhatsAppPhoneField({
   value,
   onChange,
   error,
+  label = "Número de WhatsApp",
+  inputName = "whatsapp",
+  previewText = "Tus clientes te escribirán a",
 }: {
   value: PhoneValue;
   onChange: (value: PhoneValue) => void;
   error?: string;
+  label?: string;
+  /** name del campo visible (solo el número local). Cámbialo si el formulario manda el número completo en otro campo. */
+  inputName?: string;
+  /** Texto antes del número final: "Tus clientes te escribirán a +549…". */
+  previewText?: string;
 }) {
   const country = getCountry(value.countryId);
   const full = joinWhatsApp(value.countryId, value.local);
@@ -45,7 +53,7 @@ export function WhatsAppPhoneField({
   return (
     <div>
       <label htmlFor="whatsapp" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-400">
-        Número de WhatsApp
+        {label}
       </label>
       <div className="flex gap-2">
         {/* <select> nativo invisible encima de un botón con el código corto:
@@ -76,7 +84,7 @@ export function WhatsAppPhoneField({
         </div>
         <input
           id="whatsapp"
-          name="whatsapp"
+          name={inputName}
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
@@ -100,7 +108,7 @@ export function WhatsAppPhoneField({
         {value.local.trim() && (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-zinc-500">
             <span>
-              Tus clientes te escribirán a{" "}
+              {previewText}{" "}
               <span className={`font-semibold tabular-nums ${valid ? "text-white" : "text-zinc-400"}`}>+{full}</span>
             </span>
             {valid && (

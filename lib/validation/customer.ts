@@ -61,41 +61,81 @@ export const iqonicIdSchema = z
 export const SIGN_UP_ROLES = ["client", "distributor"] as const;
 export type SignUpRole = (typeof SIGN_UP_ROLES)[number];
 
-export const signUpSchema = profileSchema
-  .extend({
+/**
+ * "  María   José García " → { full: "María José García", first: "María", last: "José García" }.
+ * La primera palabra va a first_name y el resto a last_name (customers, máx. 60 c/u);
+ * el trigger de la BD vuelve a armar full_name con los dos. Si la separación
+ * no es la correcta, el cliente la corrige después en /cuenta.
+ */
+export function splitFullName(value: string): { full: string; first: string; last: string } {
+  const full = value.trim().replace(/\s+/g, " ");
+  const [first = "", ...rest] = full.split(" ");
+  return { full, first, last: rest.join(" ") };
+}
+
+export const fullNameSchema = z
+  .string()
+  .transform((v) => splitFullName(v))
+  .refine((n) => n.full.length > 0, "Escribe tu nombre completo")
+  .refine((n) => n.full.length === 0 || n.last.length > 0, "Escribe tu nombre y tu apellido")
+  .refine((n) => n.first.length <= 60 && n.last.length <= 60, "Nombre demasiado largo (máx. 60 caracteres por nombre y apellido)");
+
+/**
+ * Registro (/registro). Datos mínimos para no frenar la conversión:
+ * nombre completo, correo, contraseña y WhatsApp (obligatorio solo para
+ * distribuidores: sus prospectos lo usan para contactarlos).
+ * Teléfono y fecha de nacimiento se completan después en /cuenta.
+ */
+export const signUpSchema = z
+  .object({
+    full_name: fullNameSchema,
     email: z.email("Correo inválido").transform((v) => v.toLowerCase()),
     password: passwordSchema,
     password_confirm: z.string(),
     role: z.enum(SIGN_UP_ROLES, { error: "Elige cómo quieres registrarte" }),
-    // Solo cuentan si role = "distributor" (ver superRefine)
+    // Solo cuenta si role = "distributor" (ver superRefine)
     iqonic_id: z.string().default(""),
     whatsapp: z.string().default(""),
+    /** Copia del navegador (localStorage); el servidor la revalida antes de usarla. */
+    referred_by_iqonic_id: z.string().max(80).default(""),
   })
   .superRefine((d, ctx) => {
     if (d.password !== d.password_confirm) {
       ctx.addIssue({ code: "custom", message: "Las contraseñas no coinciden", path: ["password_confirm"] });
     }
-    if (d.role !== "distributor") return;
 
+    const whatsapp = normalizeWhatsApp(d.whatsapp);
+    const whatsappRequired = d.role === "distributor";
+    if ((whatsappRequired || whatsapp.length > 0) && !WHATSAPP_REGEX.test(whatsapp)) {
+      ctx.addIssue({
+        code: "custom",
+        message: whatsappRequired && !whatsapp
+          ? "Escribe tu WhatsApp: tus clientes te contactarán por ahí"
+          : "WhatsApp inválido: revisa el código de país y el número",
+        path: ["whatsapp"],
+      });
+    }
+
+    if (d.role !== "distributor") return;
     const iqonic = iqonicIdSchema.safeParse(d.iqonic_id);
     if (!iqonic.success) {
       ctx.addIssue({ code: "custom", message: iqonic.error.issues[0].message, path: ["iqonic_id"] });
     }
-    if (!WHATSAPP_REGEX.test(normalizeWhatsApp(d.whatsapp))) {
-      ctx.addIssue({
-        code: "custom",
-        message: "WhatsApp inválido: incluye el código de país (ej. 5491123456789)",
-        path: ["whatsapp"],
-      });
-    }
   })
   .transform((d) => {
     const whatsapp = normalizeWhatsApp(d.whatsapp);
+    const referredBy = normalizeIqonicId(d.referred_by_iqonic_id);
     return {
-      ...d,
+      email: d.email,
+      password: d.password,
+      role: d.role,
+      full_name: d.full_name.full,
+      first_name: d.full_name.first,
+      last_name: d.full_name.last,
       // Un cliente nunca guarda iqonic_id (el CHECK de la BD lo rechazaría)
       iqonic_id: d.role === "distributor" ? normalizeIqonicId(d.iqonic_id) : null,
       whatsapp: WHATSAPP_REGEX.test(whatsapp) ? whatsapp : null,
+      referred_by_iqonic_id: IQONIC_ID_REGEX.test(referredBy) ? referredBy : null,
     };
   });
 

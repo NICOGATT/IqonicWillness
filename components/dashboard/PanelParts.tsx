@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { siteConfig } from "@/config/site";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 /** Piezas comunes de las páginas del dashboard (Server Components). */
 
@@ -37,6 +39,53 @@ export function PausedNotice() {
       Tu tienda está <strong>pausada</strong> por el equipo de {siteConfig.name}: los pedidos de tu enlace llegan a la tienda
       principal. Escríbenos si crees que es un error.
     </p>
+  );
+}
+
+/** Un cliente entró al panel: no tiene rol de distribuidor. */
+export function NotDistributorNotice() {
+  const message = "Hola, ya tengo mi número de distribuidor IQONIC y quiero activar mi cuenta como distribuidor/a en la web.";
+  return (
+    <section className="rounded-3xl border border-white/[.08] bg-white/[.02] px-6 py-12 text-center sm:px-8">
+      <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/10 bg-white/5 text-zinc-400">
+        <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="4" y="10" width="16" height="11" rx="2" />
+          <path d="M8 10V7a4 4 0 018 0v3" />
+        </svg>
+      </span>
+      <h2 className="mt-4 font-display text-xl font-bold text-white">El panel es para distribuidores</h2>
+      <p className="mx-auto mt-1 max-w-md text-sm text-zinc-400">
+        Tu cuenta está registrada como cliente. Si ya tienes tu número de distribuidor IQONIC, escríbenos y activamos tu
+        cuenta de distribuidor.
+      </p>
+      <div className="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
+        <a
+          href={buildWhatsAppUrl(message)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-wa inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-ink-950"
+        >
+          <WhatsAppIcon className="h-5 w-5" />
+          Activar mi cuenta
+        </a>
+        <Link
+          href="/cuenta"
+          className="inline-flex items-center justify-center rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40"
+        >
+          Ir a mi cuenta
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+/** "Iqonic ID · 123456" junto al saludo del panel. */
+export function IqonicIdBadge({ iqonicId }: { iqonicId: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400">
+      Iqonic ID
+      <strong className="font-semibold tabular-nums tracking-wide text-white">{iqonicId}</strong>
+    </span>
   );
 }
 

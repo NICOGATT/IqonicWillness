@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { SetupNotice } from "@/components/admin/SetupNotice";
-import { CreateStoreCTA, ErrorNotice, PageHeader } from "@/components/dashboard/PanelParts";
+import { CreateStoreCTA, ErrorNotice, NotDistributorNotice, PageHeader } from "@/components/dashboard/PanelParts";
 import { ReferralOrdersTable } from "@/components/referrals/ReferralOrders";
 import { getMyDistributorStats } from "@/lib/referrals";
 
@@ -16,6 +16,14 @@ export default async function DashboardOrdersPage() {
   if (stats.status === "unconfigured") return <SetupNotice />;
   if (stats.status === "anonymous") redirect("/ingresar?next=/dashboard/pedidos");
   if (stats.status === "error") return <ErrorNotice message={stats.error} />;
+  if (stats.status === "not-distributor") {
+    return (
+      <>
+        <PageHeader eyebrow="Pedidos" title="Pedidos de tu tienda" />
+        <NotDistributorNotice />
+      </>
+    );
+  }
 
   return (
     <>

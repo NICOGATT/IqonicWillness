@@ -1,19 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { siteConfig } from "@/config/site";
 import type { ToastTone } from "@/components/ui/Toast";
 import { useSiteOrigin } from "@/lib/use-site-origin";
 
-/** Enlace de la tienda replicada: https://dominio/?ref=juan-perez (lo procesa proxy.ts). */
-export function buildReferralLink(siteUrl: string, slug: string): string {
-  return `${siteUrl.replace(/\/$/, "")}/?ref=${encodeURIComponent(slug)}`;
+/**
+ * Enlace de invitación: https://dominio/?ref=juan-perez (slug de la tienda) o
+ * https://dominio/?ref=123456 (iqonic_id, si todavía no creó su tienda).
+ * Lo procesa proxy.ts. Se usa ?ref= y no /<ref> porque un slug igual a una
+ * ruta del sitio (creado antes de reservarla) nunca llegaría a app/[ref].
+ */
+export function buildReferralLink(siteUrl: string, ref: string): string {
+  return `${siteUrl.replace(/\/$/, "")}/?ref=${encodeURIComponent(ref)}`;
 }
 
-function getShareText(name: string) {
-  return `¡Hola! Soy ${name}, asesor/a de ${siteConfig.name} 🌿 Mira los productos y haz tu pedido directo conmigo por WhatsApp:`;
+function getShareText(name: string, hasStore: boolean) {
+  return hasStore
+    ? `¡Hola! Soy ${name}, asesor/a de ${siteConfig.name} 🌿 Mira los productos y haz tu pedido directo conmigo por WhatsApp:`
+    : `¡Hola! Soy ${name}, distribuidor/a de ${siteConfig.name} 🌿 Crea tu cuenta con mi enlace y te acompaño en tus compras:`;
+}
+
+const noopSubscribe = () => () => {};
+
+/** Menú nativo de compartir (móviles): solo existe en el navegador; false durante la hidratación. */
+function useCanShareNatively(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => typeof navigator.share === "function",
+    () => false,
+  );
 }
 
 async function copyText(text: string): Promise<boolean> {
@@ -35,21 +53,26 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** Tarjeta con el enlace de la tienda: copiar, compartir (nativo o WhatsApp) y abrir. */
+/** Tarjeta con el enlace de invitación: copiar con un clic, compartir por WhatsApp (o nativo) y abrir. */
 export function ShareLinkCard({
   siteUrl,
   slug,
   name,
   notify,
+  hasStore = true,
 }: {
   siteUrl: string;
+  /** Lo que va en ?ref=: slug de la tienda o iqonic_id. */
   slug: string;
   name: string;
   notify: (tone: ToastTone, message: string) => void;
+  /** false = distribuidor sin tienda: el enlace solo vincula registros (los pedidos van a la tienda principal). */
+  hasStore?: boolean;
 }) {
   // Dominio de la página abierta (siteUrl solo mientras se hidrata)
   const link = buildReferralLink(useSiteOrigin(siteUrl), slug);
   const [copied, setCopied] = useState(false);
+  const canShareNatively = useCanShareNatively();
 
   useEffect(() => {
     if (!copied) return;
@@ -57,24 +80,23 @@ export function ShareLinkCard({
     return () => window.clearTimeout(timer);
   }, [copied]);
 
+  const shareText = getShareText(name, hasStore);
+  /** wa.me sin número: WhatsApp abre el selector de chats con el mensaje listo. */
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${link}`)}`;
+
   async function handleCopy() {
     if (await copyText(link)) setCopied(true);
     else notify("error", "No se pudo copiar. Mantén presionado el enlace para copiarlo.");
   }
 
-  async function handleShare() {
-    const text = getShareText(name);
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: `Tienda de ${name} · ${siteConfig.name}`, text, url: link });
-        return;
-      } catch (error) {
-        // El usuario cerró el menú de compartir: no es un error
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
+  async function handleNativeShare() {
+    try {
+      await navigator.share({ title: `${name} · ${siteConfig.name}`, text: shareText, url: link });
+    } catch (error) {
+      // El usuario cerró el menú de compartir: no es un error
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      notify("error", "No se pudo abrir el menú de compartir. Copia el enlace.");
     }
-    // Sin Web Share API (la mayoría de los navegadores de escritorio): WhatsApp Web / app
-    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${link}`)}`, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -84,12 +106,14 @@ export function ShareLinkCard({
     >
       <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-violet/20 blur-3xl" aria-hidden="true" />
       <div className="relative">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-violet-light">Tu enlace</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-violet-light">Tu link de invitación</p>
         <h2 id="share-title" className="mt-2 font-display text-xl font-bold text-white sm:text-2xl">
-          Comparte tu tienda
+          {hasStore ? "Comparte tu tienda" : "Invita a tus clientes"}
         </h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Quien entre con este enlace verá tu nombre en la tienda y sus pedidos llegarán a tu WhatsApp.
+          {hasStore
+            ? "Quien entre con este enlace verá tu nombre en la tienda, quedará registrado como tu cliente y sus pedidos llegarán a tu WhatsApp."
+            : "Quien entre y cree su cuenta con este enlace quedará registrado como tu cliente."}
         </p>
 
         <div className="mt-5 flex flex-col gap-1.5 rounded-2xl border border-white/10 bg-ink-950/70 p-1.5 sm:flex-row sm:items-center sm:gap-2 sm:pl-4">
@@ -101,7 +125,7 @@ export function ShareLinkCard({
               readOnly
               value={link}
               onFocus={(e) => e.currentTarget.select()}
-              aria-label="Enlace de tu tienda"
+              aria-label="Tu link de invitación"
               className="min-w-0 flex-1 bg-transparent py-2 text-sm font-medium text-white outline-none"
             />
           </div>
@@ -122,26 +146,39 @@ export function ShareLinkCard({
                 <path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1" />
               </svg>
             )}
-            <span aria-live="polite">{copied ? "¡Copiado!" : "Copiar enlace"}</span>
+            <span aria-live="polite">{copied ? "¡Copiado!" : "Copiar mi link de invitación"}</span>
           </button>
         </div>
 
         <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
-          <button
-            type="button"
-            onClick={handleShare}
+          <a
+            href={whatsappShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-wa inline-flex flex-1 items-center justify-center gap-2.5 rounded-2xl px-5 py-3 text-sm font-bold text-ink-950"
           >
             <WhatsAppIcon className="h-5 w-5" />
-            Compartir
-          </button>
+            Compartir por WhatsApp
+          </a>
+          {canShareNatively && (
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13" />
+              </svg>
+              Más opciones
+            </button>
+          )}
           <a
             href={link}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/15 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40"
           >
-            Ver mi tienda
+            {hasStore ? "Ver mi tienda" : "Probar mi enlace"}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5" />
             </svg>

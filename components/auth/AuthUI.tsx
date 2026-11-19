@@ -5,11 +5,22 @@ import { useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { inputClass, Spinner } from "@/components/ui/fields";
 
 /** Botón principal de los formularios de cuenta. */
-export function SubmitButton({ pending, children, pendingText }: { pending: boolean; children: ReactNode; pendingText: string }) {
+export function SubmitButton({
+  pending,
+  children,
+  pendingText,
+  disabled = false,
+}: {
+  pending: boolean;
+  children: ReactNode;
+  pendingText: string;
+  /** Bloquea el envío aunque no esté enviando (p. ej. un dato ya registrado). */
+  disabled?: boolean;
+}) {
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-orange to-brand-violet px-5 py-3 text-sm font-bold text-white shadow-lg shadow-brand-violet/20 transition hover:brightness-110 disabled:opacity-60"
     >
       {pending && <Spinner />}

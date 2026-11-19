@@ -1,12 +1,60 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-import { useSignedIn } from "@/lib/use-signed-in";
 import { isSupabaseConfigured } from "@/utils/supabase/env";
+import { createClient } from "@/utils/supabase/client";
+
+/** Una sola consulta por usuario y carga de página (la navbar móvil y la de escritorio usan el mismo enlace). */
+const checks = new Map<string, Promise<boolean>>();
 
 /**
- * Botón "Dashboard" → /dashboard (panel del distribuidor), solo con sesión.
+ * ¿Puede entrar al panel? role = 'distributor' o 'admin', o tiene una tienda
+ * creada antes de los roles (mismo criterio que getDistributorContext()).
+ * RLS: cada usuario solo lee SU fila de customers y de distribuidores.
+ */
+function canUsePanel(userId: string): Promise<boolean> {
+  let check = checks.get(userId);
+  if (!check) {
+    const supabase = createClient();
+    check = (async () => {
+      const { data: me } = await supabase.from("customers").select("role").eq("id", userId).maybeSingle();
+      if (me?.role === "distributor" || me?.role === "admin") return true;
+      const { data: store } = await supabase.from("distribuidores").select("id").eq("user_id", userId).maybeSingle();
+      return store !== null;
+    })().catch(() => false);
+    checks.set(userId, check);
+  }
+  return check;
+}
+
+/** null = todavía no se sabe (no se muestra nada). */
+function useCanUsePanel(): boolean | null {
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    let cancelled = false;
+    const supabase = createClient();
+    const resolve = (userId: string | undefined) => {
+      if (!userId) return setAllowed(false);
+      canUsePanel(userId).then((value) => !cancelled && setAllowed(value));
+    };
+
+    supabase.auth.getSession().then(({ data }) => resolve(data.session?.user.id));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => resolve(session?.user.id));
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  return allowed;
+}
+
+/**
+ * Botón "Dashboard" → /dashboard (panel del distribuidor), solo para distribuidores.
  * Se resuelve en el navegador (la tienda sigue siendo estática); la
  * protección real está en el proxy y en cada página del dashboard.
  *
@@ -22,8 +70,8 @@ export function DistributorPanelLink({
   className?: string;
   onNavigate?: () => void;
 }) {
-  const signedIn = useSignedIn();
-  if (!isSupabaseConfigured() || signedIn !== true) return null;
+  const allowed = useCanUsePanel();
+  if (allowed !== true) return null;
 
   const icon = (
     <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

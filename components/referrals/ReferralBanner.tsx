@@ -1,14 +1,19 @@
 "use client";
 
 import { useActiveReferral } from "@/lib/use-active-referral";
+import { useReferralSponsor } from "@/lib/use-referral-sponsor";
 
 /**
- * Franja discreta bajo el menú: "Estás comprando en la tienda de Juan".
- * Solo aparece si la visita llegó por el enlace de un distribuidor activo.
+ * Franja discreta bajo el menú, solo si la visita llegó por un enlace de distribuidor:
+ *   · con tienda activa   → "Estás comprando en la tienda de Juan"
+ *   · sin tienda (solo ID) → "Invitado por Juan Pérez"
  */
 export function ReferralBanner() {
-  const referral = useActiveReferral();
-  if (!referral) return null;
+  const store = useActiveReferral();
+  const sponsor = useReferralSponsor();
+
+  const name = store?.nombre_mostrar ?? (sponsor.status === "ready" ? sponsor.sponsor.name : null);
+  if (!name) return null;
 
   return (
     <div className="border-t border-white/[.06] bg-gradient-to-r from-brand-violet/[.12] via-ink-950/60 to-brand-orange/[.10]">
@@ -19,7 +24,8 @@ export function ReferralBanner() {
           <path d="M8.5 12.2l2.3 2.3 4.7-4.8" fill="none" stroke="#07070a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <span className="truncate">
-          Estás comprando en la tienda de <strong className="font-semibold text-white">{referral.nombre_mostrar}</strong>
+          {store ? "Estás comprando en la tienda de " : "Invitado por "}
+          <strong className="font-semibold text-white">{name}</strong>
         </span>
         <span className="hidden text-zinc-500 sm:inline">· asesor/a oficial</span>
       </p>

@@ -140,6 +140,15 @@ export type ClienteReferido = Pick<
   "id" | "full_name" | "email" | "phone" | "whatsapp" | "created_at"
 >;
 
+/**
+ * Estado de un cliente referido en el panel (se calcula en lib/referrals.ts, no está en la BD):
+ *   compro     → hay un pedido activo de la tienda del distribuidor con su WhatsApp/teléfono
+ *   nuevo      → se registró hace 7 días o menos y todavía no aparece en un pedido
+ *   registrado → el resto
+ */
+export type ClienteReferidoEstado = "compro" | "nuevo" | "registrado";
+export type ClienteReferidoConEstado = ClienteReferido & { estado: ClienteReferidoEstado };
+
 export const ORDER_STATUSES = ["pending", "confirmed", "paid", "shipped", "delivered", "cancelled", "refunded"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type OrderChannel = "whatsapp" | "stripe" | "mercadopago" | "manual";

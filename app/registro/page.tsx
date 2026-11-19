@@ -11,7 +11,7 @@ export default function SignUpPage() {
   return (
     <AuthShell
       title="Crea tu cuenta"
-      subtitle="Regístrate para pedir más rápido y seguir tus compras."
+      subtitle="Compra más rápido y sigue tus pedidos, o suma clientes a tu red de distribuidor."
       footer={
         <>
           ¿Ya tienes cuenta?{" "}
