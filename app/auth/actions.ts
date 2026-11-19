@@ -5,14 +5,17 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { safeNextPath } from "@/lib/customer";
+import { resolveReferrerIqonicId } from "@/lib/referrals";
 import { toFieldErrors } from "@/lib/validation/product";
 import {
   formToObject,
+  iqonicIdSchema,
   newPasswordSchema,
   profileSchema,
   signInSchema,
   signUpSchema,
 } from "@/lib/validation/customer";
+import { isSupabaseConfigured } from "@/utils/supabase/env";
 import { createClient } from "@/utils/supabase/server";
 
 /**
@@ -49,29 +52,112 @@ const withoutPasswords = (values: Record<string, string>) => {
 // ---------------------------------------------------------------------
 // Registro
 // ---------------------------------------------------------------------
+export type IqonicIdCheck =
+  | { status: "available"; iqonicId: string }
+  | { status: "taken" | "invalid" | "error"; message: string };
+
+/**
+ * ¿Está libre este iqonic_id? Para validar en vivo mientras se escribe en el
+ * registro (sin sesión). La BD vuelve a garantizarlo con UNIQUE al registrar.
+ */
+export async function checkIqonicIdAvailability(value: string): Promise<IqonicIdCheck> {
+  const parsed = iqonicIdSchema.safeParse(typeof value === "string" ? value.slice(0, 80) : "");
+  if (!parsed.success) return { status: "invalid", message: parsed.error.issues[0].message };
+  if (!isSupabaseConfigured()) return { status: "error", message: "El registro no está disponible en este momento." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("iqonic_id_disponible", { p_iqonic_id: parsed.data });
+  if (error) {
+    console.error("[auth] iqonic_id_disponible:", error.code, error.message);
+    return { status: "error", message: "No pudimos verificar el Iqonic ID. Inténtalo de nuevo." };
+  }
+  return data
+    ? { status: "available", iqonicId: parsed.data }
+    : { status: "taken", message: "Ese Iqonic ID ya está registrado en la plataforma." };
+}
+
+const SIGN_UP_FIELDS = [
+  "first_name",
+  "last_name",
+  "phone",
+  "birth_date",
+  "email",
+  "password",
+  "password_confirm",
+  "role",
+  "iqonic_id",
+  "whatsapp",
+  "next",
+];
+
 export async function signUpCustomer(_prev: FormState, formData: FormData): Promise<FormState> {
-  const raw = formToObject(formData, ["first_name", "last_name", "phone", "birth_date", "email", "password", "password_confirm", "next"]);
+  const raw = formToObject(formData, SIGN_UP_FIELDS);
   // Adónde volver al terminar (p. ej. /pago si venía del checkout); solo rutas internas
   const next = safeNextPath(raw.next);
   delete raw.next;
+  const values = withoutPasswords(raw);
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
-    return { status: "error", message: "Revisa los campos marcados.", fieldErrors: toFieldErrors(parsed.error), values: withoutPasswords(raw) };
+    return { status: "error", message: "Revisa los campos marcados.", fieldErrors: toFieldErrors(parsed.error), values };
   }
 
-  const { email, password, first_name, last_name, phone, birth_date } = parsed.data;
+  const { email, password, first_name, last_name, phone, birth_date, role, iqonic_id, whatsapp } = parsed.data;
+  const isDistributor = role === "distributor";
   const supabase = await createClient();
+
+  // Distribuidor: el iqonic_id tiene que estar libre. Si la verificación falla
+  // no se bloquea: el UNIQUE de la BD tiene la última palabra (ver más abajo).
+  if (isDistributor && iqonic_id) {
+    const { data: available, error: rpcError } = await supabase.rpc("iqonic_id_disponible", { p_iqonic_id: iqonic_id });
+    if (rpcError) console.error("[auth] iqonic_id_disponible:", rpcError.code, rpcError.message);
+    else if (!available) {
+      return {
+        status: "error",
+        message: "Revisa los campos marcados.",
+        fieldErrors: { iqonic_id: "Ese Iqonic ID ya está registrado en la plataforma." },
+        values,
+      };
+    }
+  }
+
+  // Patrocinador: cookie de referido → distribuidor por defecto → null (orgánico).
+  // Se guarda para clientes Y distribuidores (el patrocinador de un distribuidor).
+  const referredBy = await resolveReferrerIqonicId();
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       // El trigger handle_new_customer() copia estos datos a public.customers
-      data: { first_name, last_name, phone, birth_date },
+      // y vuelve a validarlos (role, iqonic_id único, patrocinador existente).
+      data: {
+        first_name,
+        last_name,
+        full_name: `${first_name} ${last_name}`,
+        phone,
+        birth_date,
+        role,
+        iqonic_id,
+        whatsapp,
+        referred_by_iqonic_id: referredBy !== iqonic_id ? referredBy : null,
+      },
       emailRedirectTo: `${await getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
   if (error) {
+    console.error("[auth] signUp:", error.code, error.message);
+
+    // El trigger rechazó el alta (Supabase lo devuelve como "Database error
+    // saving new user"). Con un distribuidor casi siempre es que otro tomó el
+    // mismo iqonic_id entre la verificación y el registro.
+    if (isDistributor && iqonic_id && (error.code === "unexpected_failure" || /database error/i.test(error.message))) {
+      const check = await checkIqonicIdAvailability(iqonic_id);
+      if (check.status === "taken") {
+        return { status: "error", message: "Revisa los campos marcados.", fieldErrors: { iqonic_id: check.message }, values };
+      }
+    }
+
     const message =
       error.code === "weak_password"
         ? "La contraseña es demasiado débil. Prueba con una más larga."
@@ -80,8 +166,7 @@ export async function signUpCustomer(_prev: FormState, formData: FormData): Prom
           : error.code === "signup_disabled"
             ? "El registro está desactivado en este momento."
             : "No pudimos crear tu cuenta. Inténtalo de nuevo.";
-    console.error("[auth] signUp:", error.code, error.message);
-    return { status: "error", message, values: withoutPasswords(raw) };
+    return { status: "error", message, values };
   }
 
   // Si el proyecto no exige confirmar el correo, ya hay sesión

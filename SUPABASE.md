@@ -159,3 +159,17 @@ y `/admin` muestra un aviso. Útil para desarrollar el diseño sin conexión.
 
 Si la migración no está ejecutada, el carrito sigue funcionando: manda el pedido por WhatsApp sin número y
 no lo guarda.
+
+## Paso 9 · Roles (cliente / distribuidor / admin) e Iqonic ID
+
+1. **SQL Editor → New query**: pega [`supabase/migrations/0006_roles_iqonic_id.sql`](supabase/migrations/0006_roles_iqonic_id.sql)
+   y pulsa **Run** (necesita 0001 … 0005).
+2. Agrega a `public.customers`: `role`, `iqonic_id` (único), `referred_by_iqonic_id`, `whatsapp` y `full_name`.
+   Un `CHECK` impide guardar un distribuidor sin `iqonic_id` (y un cliente con uno).
+3. El registro (`/registro`) deja elegir **Cliente** o **Distribuidor**. El patrocinador sale de la cookie
+   `iqonic_ref` (enlaces `?ref=<slug>` o `/r/<slug>`). Opcional: `DEFAULT_REFERRER_IQONIC_ID` en `.env.local`
+   para atribuir el tráfico orgánico a un distribuidor por defecto.
+4. RLS: cada distribuidor ve solo su perfil y a quienes refirió; cada cliente, solo el suyo; los admins, todo.
+   `role = 'admin'` se sincroniza solo con la tabla `admins`.
+5. Distribuidores que ya tenían tienda: asígnales su ID desde el SQL Editor
+   (`update public.customers set role = 'distributor', iqonic_id = 'AB123' where email = '…';`).

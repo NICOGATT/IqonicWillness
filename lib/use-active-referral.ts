@@ -17,9 +17,10 @@ import { createClient } from "@/utils/supabase/client";
 
 /** Mismo nombre que REFERRAL_COOKIE en lib/referral-attribution.ts (ese módulo usa next/server). */
 const REFERRAL_COOKIE = "iqonic_ref";
-const SESSION_KEY = "iqonic-ref-info-v1";
+const SESSION_KEY = "iqonic-ref-info-v2";
 
-export type ActiveReferral = { slug: string; nombre_mostrar: string };
+/** whatsapp: para que un prospecto le escriba a su patrocinador desde el registro. */
+export type ActiveReferral = { slug: string; nombre_mostrar: string; whatsapp: string };
 
 /** Una sola consulta por slug y por carga de página, aunque varios componentes usen el hook. */
 const requests = new Map<string, Promise<ActiveReferral | null>>();
@@ -38,7 +39,9 @@ function readReferralCookie(): string | null {
 function readSessionCache(slug: string): ActiveReferral | null {
   try {
     const cached = JSON.parse(window.sessionStorage.getItem(SESSION_KEY) ?? "null") as ActiveReferral | null;
-    return cached?.slug === slug && typeof cached.nombre_mostrar === "string" ? cached : null;
+    return cached?.slug === slug && typeof cached.nombre_mostrar === "string" && typeof cached.whatsapp === "string"
+      ? cached
+      : null;
   } catch {
     return null;
   }
@@ -63,7 +66,7 @@ function loadReferral(slug: string): Promise<ActiveReferral | null> {
       // RLS: anónimos y clientes solo ven distribuidores ACTIVOS y sus columnas públicas
       const { data, error } = await createClient()
         .from("distribuidores")
-        .select("slug, nombre_mostrar")
+        .select("slug, nombre_mostrar, whatsapp")
         .eq("slug", slug)
         .eq("activo", true)
         .maybeSingle();

@@ -98,7 +98,13 @@ export type PackageWithItemsRow = PackageRow & {
   savings: number | null;
 };
 
-/** Perfil del cliente. La contraseña NO está aquí: vive cifrada en auth.users. */
+export const USER_ROLES = ["admin", "distributor", "client"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
+/**
+ * Perfil del usuario (cliente, distribuidor o admin). La contraseña NO está
+ * aquí: vive cifrada en auth.users.
+ */
 export type CustomerRow = {
   id: string;
   email: string;
@@ -107,9 +113,32 @@ export type CustomerRow = {
   phone: string | null;
   /** Fecha ISO "YYYY-MM-DD". */
   birth_date: string | null;
+  /** 'admin' refleja la tabla admins (0006). */
+  role: UserRole;
+  /** ID de distribuidor de IQONIC, en mayúsculas. Obligatorio si role = 'distributor'; null si 'client'. */
+  iqonic_id: string | null;
+  /** iqonic_id del distribuidor que lo trajo; null = tráfico orgánico. */
+  referred_by_iqonic_id: string | null;
+  /** Solo dígitos con código de país: "5491123456789". */
+  whatsapp: string | null;
+  /** "Nombre Apellido" (lo mantiene la BD a partir de first_name / last_name). */
+  full_name: string | null;
   created_at: string;
   updated_at: string;
 };
+
+/** Lo que devuelve distribuidor_publico(): nada privado. */
+export type DistribuidorContacto = {
+  full_name: string | null;
+  iqonic_id: string;
+  whatsapp: string | null;
+};
+
+/** Cliente referido, tal como lo ve su distribuidor en el panel. */
+export type ClienteReferido = Pick<
+  CustomerRow,
+  "id" | "full_name" | "email" | "phone" | "whatsapp" | "created_at"
+>;
 
 export const ORDER_STATUSES = ["pending", "confirmed", "paid", "shipped", "delivered", "cancelled", "refunded"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -286,7 +315,21 @@ export type Database = {
       customers: {
         Row: CustomerRow;
         Insert: Partial<CustomerRow> & { id: string; email: string };
-        Update: Partial<Pick<CustomerRow, "first_name" | "last_name" | "phone" | "birth_date">>;
+        // role / iqonic_id / referred_by_iqonic_id: solo admins (trigger customers_before_write)
+        Update: Partial<
+          Pick<
+            CustomerRow,
+            | "first_name"
+            | "last_name"
+            | "phone"
+            | "birth_date"
+            | "whatsapp"
+            | "full_name"
+            | "role"
+            | "iqonic_id"
+            | "referred_by_iqonic_id"
+          >
+        >;
         Relationships: [];
       };
       admins: {
@@ -360,6 +403,12 @@ export type Database = {
       slug_disponible: { Args: { p_slug: string }; Returns: boolean };
       /** Métricas del distribuidor autenticado. Devuelve ResumenDistribuidor (jsonb). */
       resumen_distribuidor: { Args: Record<string, never>; Returns: Json };
+      /** true si nadie tiene ese iqonic_id (0006). Lo puede llamar un anónimo. */
+      iqonic_id_disponible: { Args: { p_iqonic_id: string }; Returns: boolean };
+      /** Contacto público de un distribuidor por iqonic_id o slug (0006). 0 o 1 filas. */
+      distribuidor_publico: { Args: { p_ref: string }; Returns: DistribuidorContacto[] };
+      /** iqonic_id del distribuidor autenticado (null si no lo es). */
+      current_distributor_iqonic_id: { Args: Record<string, never>; Returns: string | null };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

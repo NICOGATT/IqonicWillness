@@ -17,6 +17,11 @@ const sections: { href: string; label: string; icon: ReactNode }[] = [
     icon: <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />,
   },
   {
+    href: "/dashboard/clientes",
+    label: "Clientes",
+    icon: <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />,
+  },
+  {
     href: "/dashboard/tienda",
     label: "Mi tienda",
     icon: <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6" />,
